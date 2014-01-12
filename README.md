@@ -13,7 +13,7 @@ Features
 
 Usage
 -----
-Make a list including your targets and pass it to the script (-i). Screenshots will be available in your current ```./screeshots``` directory.
+Make a list including your targets and pass it to the script (-i). Screenshots will be available in your current ```./screeshots/``` directory.
 Accepted input formats are the following:
 ```
 http(s)://domain_or_ip:port(/ressource)
