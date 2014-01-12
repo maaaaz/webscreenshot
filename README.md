@@ -94,6 +94,15 @@ webscreenshot.py version 1.0
 [INFO][https://duckduckgo.com:443/robots.txt] Screenshot OK
 [+] 4 actual URLs screenshotted
 [+] 0 errors
+
+Results
+-------
+$ ls -l screenshots/
+total 61
+-rwxrwxrwx 1 root root 35005 Jan 12 19:46 http___173.194.67.113_80.png
+-rwxrwxrwx 1 root root 38152 Jan 12 19:46 http___google.fr_80.png
+-rwxrwxrwx 1 root root 35005 Jan 12 19:46 https___173.194.67.113_443.png
+-rwxrwxrwx 1 root root 12828 Jan 12 19:46 https___duckduckgo.com_443_robots.txt.png
 ```
 
 Requirements
