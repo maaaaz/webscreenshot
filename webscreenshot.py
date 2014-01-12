@@ -34,7 +34,7 @@ from optparse import OptionParser
 
 # Options definition
 option_0 = { 'name' : ('-i', '--input-file'), 'help' : '<INPUT_FILE>: text file containing the target list. Ex: list.txt', 'nargs' : 1}
-option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY>: screenshots output directory (default \'./screenshots/\')', 'default' : 'False', 'nargs' : 1}
+option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY>: screenshots output directory (default \'./screenshots/\')', 'nargs' : 1}
 option_2 = { 'name' : ('-u', '--username'), 'help' : '<USERNAME>: HTTP Authentication username', 'nargs' : 1}
 option_3 = { 'name' : ('-m', '--password'), 'help' : '<PASSWORD>: HTTP Authentication password', 'nargs' : 1}
 option_4 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY>: Specify a proxy. Ex: -P http://user:password@myproxyserver:8080 -P socks5://myproxyserver'}
@@ -275,7 +275,7 @@ def main(options, arguments):
 	"""
 		Dat main
 	"""
-	global VERSION
+	global VERSION, SCREENSHOTS_DIRECTORY
 	signal.signal(signal.SIGINT, kill_em_all)
 	
 	print 'webscreenshot.py version %s\n' % VERSION
@@ -287,6 +287,9 @@ def main(options, arguments):
 	
 	if (options.input_file == None):
 		parser.error('Please specify a valid input file')
+	
+	if options.output_directory != None:
+		SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))) 
 	
 	logger_gen.debug("Options: %s" % options)
 	if not os.path.exists(SCREENSHOTS_DIRECTORY):
