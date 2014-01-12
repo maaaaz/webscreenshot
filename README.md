@@ -13,7 +13,7 @@ Features
 
 Usage
 -----
-Make a list including your targets and pass it to the script (-i). Screenshots will be available in your current './screeshots' directory.
+Make a list including your targets and pass it to the script (-i). Screenshots will be available in your current ```./screeshots``` directory.
 Accepted input formats are the following:
 ```
 http(s)://domain_or_ip:port(/ressource)
@@ -69,6 +69,7 @@ https://173.194.67.113
 173.194.67.113
 https://duckduckgo.com/robots.txt
 
+
 Default execution
 -----------------
 $ python webscreenshot.py -i list.txt
@@ -78,15 +79,16 @@ webscreenshot.py version 1.0
 [+] 4 actual URLs screenshotted
 [+] 0 errors
 
+
 Increased verbosity level execution
 -----------------------------------
 $ python webscreenshot.py -i list.txt -l INFO
 webscreenshot.py version 1.0
 
-[INFO][General] 'http://google.fr' has been formated as 'http://google.fr:80' with supplied overriding options
-[INFO][General] 'https://173.194.67.113' has been formated as 'https://173.194.67.113:443' with supplied overriding options
-[INFO][General] '173.194.67.113' has been formated as 'http://173.194.67.113:80' with supplied overriding options
-[INFO][General] 'https://duckduckgo.com/robots.txt' has been formated as 'https://duckduckgo.com:443/robots.txt' with supplied overriding options
+[INFO][General] 'http://google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
+[INFO][General] 'https://173.194.67.113' has been formatted as 'https://173.194.67.113:443' with supplied overriding options
+[INFO][General] '173.194.67.113' has been formatted as 'http://173.194.67.113:80' with supplied overriding options
+[INFO][General] 'https://duckduckgo.com/robots.txt' has been formatted as 'https://duckduckgo.com:443/robots.txt' with supplied overriding options
 [+] 4 URLs to be screenshotted
 [INFO][http://173.194.67.113:80] Screenshot OK
 [INFO][https://173.194.67.113:443] Screenshot OK

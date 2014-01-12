@@ -206,7 +206,7 @@ def parse_targets(fd):
 				final_uri = '%s://%s:%s' % (protocol, host, port)
 				final_uri = final_uri + '/%s' % res if res != None else final_uri
 				target_list.append(final_uri)
-				logger_gen.info("'%s' has been formated as '%s' with supplied overriding options" % (line, final_uri))
+				logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri))
 	
 	return target_list		
 
