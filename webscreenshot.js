@@ -37,7 +37,7 @@ for(var i = 0; i < system.args.length; i++) {
 
 if (typeof(URL) === 'undefined' || typeof(output_file) === 'undefined') {
 	console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png>");
-    console.log('Please specify an input file containing targets and an output png filename !');
+	console.log('Please specify an input file containing targets and an output png filename !');
 	phantom.exit(1);
 } 
 else {
