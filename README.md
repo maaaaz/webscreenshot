@@ -110,7 +110,7 @@ Requirements
 
 Changelog
 ---------
-* version 1.1 - 04/21/2014: Changed the script to use phantomjs instead of the buggy wkhtml binary
+* version 1.1 - 04/21/2014: Changed the script to use phantomjs instead of the buggy wkhtml binary 
 * version 1.0 - 01/12/2014: Initial commit
 
 Copyright and license
