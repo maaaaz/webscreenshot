@@ -35,23 +35,21 @@ from optparse import OptionParser
 # Options definition
 option_0 = { 'name' : ('-i', '--input-file'), 'help' : '<INPUT_FILE>: text file containing the target list. Ex: list.txt', 'nargs' : 1}
 option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY>: screenshots output directory (default \'./screenshots/\')', 'nargs' : 1}
-option_2 = { 'name' : ('-u', '--username'), 'help' : '<USERNAME>: HTTP Authentication username', 'nargs' : 1}
-option_3 = { 'name' : ('-m', '--password'), 'help' : '<PASSWORD>: HTTP Authentication password', 'nargs' : 1}
-option_4 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY>: Specify a proxy. Ex: -P http://user:password@myproxyserver:8080 -P socks5://myproxyserver'}
-option_5 = { 'name' : ('-c', '--cookie'), 'help' : '<COOKIE>: Specify a cookie string to use. Ex: -c "foo=bar" -c "foo1=bar1;foo2=bar2"', 'nargs' : 1}
-option_6 = { 'name' : ('-p', '--port'), 'help' : '<PORT>: use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
-option_7 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL>: enforce ssl for every connection', 'action' : 'store_true', 'default' : 'False'}
-option_8 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT>: wkhtml execution timeout in seconds (default 30 sec)', 'default' : '30', 'nargs' : 1}
-option_9 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS>: number of parallel execution workers (default 3)', 'default' : '3', 'nargs' : 1}
-option_10 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
+option_2 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY>: Specify a proxy. Ex: -P http://proxy.company.com:8080'}
+option_3 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH>: Provides authentication information for the proxy. Ex: -A user:password'}
+option_4 = { 'name' : ('-p', '--port'), 'help' : '<PORT>: use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
+option_5 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL>: enforce ssl for every connection', 'action' : 'store_true', 'default' : 'False'}
+option_6 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT>: phantomjs execution timeout in seconds (default 30 sec)', 'default' : '30', 'nargs' : 1}
+option_7 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS>: number of parallel execution workers (default 3)', 'default' : '3', 'nargs' : 1}
+option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
 
-options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
+options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
 # Script version
-VERSION = '1.0'
+VERSION = '1.1'
 
-# wkhtmltoimage binary, default in the same directory as this script
-## Be free to change it to your own copy of the binary
-WKHTMLTOIMAGE_BIN = os.path.abspath(os.path.join(os.getcwdu(),'wkhtmltoimage-i386'))
+# phantomjs binary, hoping to find it in a $PATH directory
+## Be free to change it to your own full-path location 
+PHANTOMJS_BIN = 'phantomjs'
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
 
 # Logger definition
@@ -124,6 +122,9 @@ def filter_bad_filename_chars(filename):
 	"""
 		Filter bad chars for any filename
 	"""
+	# Just avoiding triple underscore escape for the classic '://' pattern
+	filename = filename.replace('://', '_')
+	
 	return re.sub('[^\w\-_\. ]', '_', filename)
 
 def extract_all_matched_named_groups(regex, match):
@@ -146,7 +147,6 @@ def extract_all_matched_named_groups(regex, match):
 def entry_format_validator(line):
 	"""
 		Validate the current line against several regexes and return matched parameters (ip, domain, port etc.)
-		wkhtmltoimage accepts the following formats : http(s)://, ip, ip:port, fqdn, fqdn:port
 	"""
 	tab = {	'full_uri_domain' 		: full_uri_domain,
 			'fqdn_only'				: fqdn_only,
@@ -181,7 +181,7 @@ def parse_targets(fd):
 			else:
 				host = matches['host']
 				
-				# Protocol is 'http' by default
+				# Protocol is 'http' by default, unless ssl is forced
 				if options.ssl == True:
 					protocol = 'https'
 				elif 'protocol' in matches.keys():
@@ -189,7 +189,7 @@ def parse_targets(fd):
 				else:
 					protocol = 'http'
 				
-				# Port is ('80' for http) or ('443' for https) by default
+				# Port is ('80' for http) or ('443' for https) by default, unless a specific port is supplied
 				if options.port != None:
 					port = options.port
 				elif 'port' in matches.keys():
@@ -214,36 +214,30 @@ def craft_cmd(url):
 	"""
 		Craft the correct command with url and options
 	"""
-	global options, WKHTMLTOIMAGE_BIN, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
+	global options, PHANTOMJS_BIN, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
 	
 	logger_url = logging.getLogger("%s" % url)
 	logger_url.setLevel(options.log_level)
 
 	output_filename = os.path.join(SCREENSHOTS_DIRECTORY, ('%s.png' % filter_bad_filename_chars(url)))
-	cmd_parameters = [ 	WKHTMLTOIMAGE_BIN,
-						'--load-error-handling ignore',
-						'--quality 60'
+	
+	# If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
+	cmd_parameters = [ 	PHANTOMJS_BIN,
+						'--ignore-ssl-errors true'
 	]
 	
-	cmd_parameters.append("-p %s" % options.proxy) if options.proxy != None else None
-	
-	if options.cookie != None:
-		for cookie_tuple in options.cookie.split(';'):
-			name, value = cookie_tuple.split('=')
-			cmd_parameters.append("--cookie %s %s" % (str(name), str(value)))
-	
-	cmd_parameters.append("--username %s" % options.username) if options.username != None else None
-	cmd_parameters.append("--password %s" % options.password) if options.password != None else None
-	
-	cmd_parameters.append('%s %s' % (url, output_filename))
-	cmd_parameters.append('> /dev/null 2>&1')
-
+	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
+	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
+		
+	cmd_parameters.append('webscreenshot.js url_capture=%s output_file=%s' % (url, output_filename))
 		
 	cmd = " ".join(cmd_parameters)
 	
 	logger_url.debug("Shell command to be executed\n'%s'" % cmd)
 	
+	
 	execution_retval = shell_exec(url, cmd)
+	
 	if execution_retval != SHELL_EXECUTION_OK:
 		logger_url.error("Screenshot somehow failed")
 	else:

@@ -3,17 +3,17 @@ webscreenshot
 
 Description
 -----------
-A simple script to screenshot a list of websites, based on wkhtmltoimage binary.
+A simple script to screenshot a list of websites, based on a phantomjs script.
 
 Features
 --------
 * Multiprocessing and kill of unresponding processes after a user-definable timeout
 * Accepts several format as input target
-* Maps most used options of wkhtmltoimage such as proxy, http authentication and cookie
+* Maps useful options of phantomjs such as proxy definition and proxy authentication
 
 Usage
 -----
-Put your targets in a text file pass it to the script (-i). Screenshots will be available in your current ```./screenshots/``` directory.
+Put your targets in a text file pass it to the script (-i). Screenshots will be available in your current ```./screenshots/``` directory (default).
 Accepted input formats are the following:
 ```
 http(s)://domain_or_ip:port(/ressource)
@@ -35,22 +35,17 @@ Options:
   -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
                         <OUTPUT_DIRECTORY>: screenshots output directory
                         (default './screenshots/')
-  -u USERNAME, --username=USERNAME
-                        <USERNAME>: HTTP Authentication username
-  -m PASSWORD, --password=PASSWORD
-                        <PASSWORD>: HTTP Authentication password
   -P PROXY, --proxy=PROXY
                         <PROXY>: Specify a proxy. Ex: -P
-                        http://user:password@myproxyserver:8080 -P
-                        socks5://myproxyserver
-  -c COOKIE, --cookie=COOKIE
-                        <COOKIE>: Specify a cookie string to use. Ex: -c
-                        "foo=bar" -c "foo1=bar1;foo2=bar2"
+                        http://proxy.company.com:8080
+  -A PROXY_AUTH, --proxy-auth=PROXY_AUTH
+                        <PROXY_AUTH>: Provides authentication information for
+                        the proxy. Ex: -A user:password
   -p PORT, --port=PORT  <PORT>: use the specified port for each target in the
                         input list. Ex: -p 80
   -s, --ssl             <SSL>: enforce ssl for every connection
   -t TIMEOUT, --timeout=TIMEOUT
-                        <TIMEOUT>: wkhtml execution timeout in seconds
+                        <TIMEOUT>: phantomjs execution timeout in seconds
                         (default 30 sec)
   -w WORKERS, --workers=WORKERS
                         <WORKERS>: number of parallel execution workers
@@ -83,7 +78,7 @@ webscreenshot.py version 1.0
 Increased verbosity level execution
 -----------------------------------
 $ python webscreenshot.py -i list.txt -l INFO
-webscreenshot.py version 1.0
+webscreenshot.py version 1.1
 
 [INFO][General] 'http://google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
 [INFO][General] 'https://173.194.67.113' has been formatted as 'https://173.194.67.113:443' with supplied overriding options
@@ -110,10 +105,11 @@ total 61
 Requirements
 ------------
 * python >= 2.6
-* wkhtmltoimage binary (included)
+* phantomjs: follow the first response from this link to install it smoothly http://stackoverflow.com/questions/8778513/how-can-i-setup-run-phantomjs-on-ubuntu
 
 Changelog
 ---------
+* version 1.1 - 04/21/2014: Changed the script to use phantomjs instead of the buggy wkhtml binary
 * version 1.0 - 01/12/2014: Initial commit
 
 Copyright and license
@@ -126,8 +122,6 @@ See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with webscreenshot. 
 If not, see http://www.gnu.org/licenses/.
-
-wkhtmltoimage is also distributed under LGPL : https://code.google.com/p/wkhtmltopdf/
 
 Contact
 -------
