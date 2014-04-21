@@ -13,7 +13,8 @@ Features
 
 Usage
 -----
-Put your targets in a text file pass it to the script (-i). Screenshots will be available in your current ```./screenshots/``` directory (default).
+Put your targets in a text file pass it to the script (-i).  
+Screenshots will be available in your current ```./screenshots/``` directory (default).  
 Accepted input formats are the following:
 ```
 http(s)://domain_or_ip:port(/ressource)
