@@ -3,7 +3,7 @@
 
 # This file is part of webscreenshot.
 #
-# Copyright (C) 2013, Thomas Debize <tdebize at mail.com>
+# Copyright (C) 2014, Thomas Debize <tdebize at mail.com>
 # All rights reserved.
 #
 # webscreenshot is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@ import datetime
 import time
 import signal
 import multiprocessing
+import shlex
 import logging
 
 # OptionParser imports
@@ -40,7 +41,7 @@ option_3 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH>: Provides a
 option_4 = { 'name' : ('-p', '--port'), 'help' : '<PORT>: use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
 option_5 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL>: enforce ssl for every connection', 'action' : 'store_true', 'default' : 'False'}
 option_6 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT>: phantomjs execution timeout in seconds (default 30 sec)', 'default' : '30', 'nargs' : 1}
-option_7 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS>: number of parallel execution workers (default 3)', 'default' : '3', 'nargs' : 1}
+option_7 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS>: number of parallel execution workers (default 2)', 'default' : 2, 'nargs' : 1}
 option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
@@ -86,7 +87,7 @@ def kill_em_all(signal, frame):
 
 	for pid in PID_LIST:
 		os.kill(int(pid), signal.SIGKILL)
-		logger_gen.info("trying to kill PID %s" % pid)
+		logger_gen.info("SIGINT received, trying to kill PID %s" % pid)
 	
 	sys.exit(0)
 	
@@ -103,7 +104,7 @@ def shell_exec(url, command):
 	timeout = int(options.timeout)
 	start = datetime.datetime.now()
 	
-	p = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	PID_LIST.append(p.pid)
 	
 	while p.poll() is None:
@@ -229,12 +230,11 @@ def craft_cmd(url):
 	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
 	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
 		
-	cmd_parameters.append('webscreenshot.js url_capture=%s output_file=%s' % (url, output_filename))
+	cmd_parameters.append('webscreenshot.js url_capture=%s output_file="%s"' % (url, output_filename))
 		
 	cmd = " ".join(cmd_parameters)
 	
 	logger_url.debug("Shell command to be executed\n'%s'" % cmd)
-	
 	
 	execution_retval = shell_exec(url, cmd)
 	
@@ -295,7 +295,6 @@ def main(options, arguments):
 	take_screenshot(url_list)
 	
 	return None
-	
 
 if __name__ == "__main__" :
 	parser = OptionParser()

@@ -1,7 +1,7 @@
 /***
 # This file is part of webscreenshot.
 #
-# Copyright (C) 2013, Thomas Debize <tdebize at mail.com>
+# Copyright (C) 2014, Thomas Debize <tdebize at mail.com>
 # All rights reserved.
 #
 # webscreenshot is free software: you can redistribute it and/or modify
