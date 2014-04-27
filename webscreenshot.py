@@ -45,8 +45,9 @@ option_7 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS>: number of parall
 option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
 
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
+
 # Script version
-VERSION = '1.1'
+VERSION = '1.2'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
@@ -54,8 +55,11 @@ PHANTOMJS_BIN = 'phantomjs'
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
 
 # Logger definition
-logging.basicConfig(level=logging.ERROR, format='[%(levelname)s][%(name)s] %(message)s',)
+logger_output = logging.StreamHandler(sys.stdout)
+logger_output.setFormatter(logging.Formatter('[%(levelname)s][%(name)s] %(message)s'))
+
 logger_gen = logging.getLogger("General")
+logger_gen.addHandler(logger_output)
 
 # Macros
 PID_LIST = []
@@ -215,9 +219,10 @@ def craft_cmd(url):
 	"""
 		Craft the correct command with url and options
 	"""
-	global options, PHANTOMJS_BIN, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
+	global logger_output, options, PHANTOMJS_BIN, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
 	
 	logger_url = logging.getLogger("%s" % url)
+	logger_url.addHandler(logger_output)
 	logger_url.setLevel(options.log_level)
 
 	output_filename = os.path.join(SCREENSHOTS_DIRECTORY, ('%s.png' % filter_bad_filename_chars(url)))
@@ -230,7 +235,7 @@ def craft_cmd(url):
 	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
 	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
 		
-	cmd_parameters.append('webscreenshot.js url_capture=%s output_file="%s"' % (url, output_filename))
+	cmd_parameters.append('webscreenshot.js url_capture="%s" output_file="%s"' % (url, output_filename))
 		
 	cmd = " ".join(cmd_parameters)
 	
@@ -239,11 +244,11 @@ def craft_cmd(url):
 	execution_retval = shell_exec(url, cmd)
 	
 	if execution_retval != SHELL_EXECUTION_OK:
-		logger_url.error("Screenshot somehow failed")
+		logger_url.error("Screenshot somehow failed\n")
 	else:
-		logger_url.info("Screenshot OK")
+		logger_url.info("Screenshot OK\n")
 	
-	return execution_retval
+	return execution_retval, url
 	
 def take_screenshot(url_list):
 	"""
@@ -258,10 +263,15 @@ def take_screenshot(url_list):
 	
 	taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=url_list)]
 	
-	screenshots_error = sum(s == SHELL_EXECUTION_ERROR for s in taken_screenshots)
-	screenshots_ok = screenshot_number - screenshots_error
+	screenshots_error_url = [url for retval, url in taken_screenshots if retval == SHELL_EXECUTION_ERROR]
+	screenshots_error = sum(retval == SHELL_EXECUTION_ERROR for retval, url in taken_screenshots)
+	screenshots_ok = int(screenshot_number - screenshots_error)
 	print "[+] %s actual URLs screenshotted" % screenshots_ok
-	print "[+] %s errors" % screenshots_error
+	print "[+] %s error(s)" % screenshots_error
+	
+	if screenshots_error != 0:
+		for url in screenshots_error_url:
+			print "    %s" % url
 		
 	return None
 	
