@@ -19,9 +19,9 @@
 **/
 
 var system = require('system');
+var page = require('webpage').create();
 var p_url = new RegExp('url_capture=(.*)');
 var p_outfile = new RegExp('output_file=(.*)');
-var page = require('webpage').create();
 
 for(var i = 0; i < system.args.length; i++) {
 	if (p_url.test(system.args[i]) === true)
@@ -35,9 +35,9 @@ for(var i = 0; i < system.args.length; i++) {
 	}
 }
 
-if (typeof(URL) === 'undefined' || typeof(output_file) === 'undefined') {
+if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
 	console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png>");
-	console.log('Please specify an input file containing targets and an output png filename !');
+	console.log('Please specify an URL to capture and an output png filename !');
 	phantom.exit(1);
 } 
 else {

@@ -47,11 +47,12 @@ option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity lev
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
 
 # Script version
-VERSION = '1.2'
+VERSION = '1.3'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
 PHANTOMJS_BIN = 'phantomjs'
+WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
 
 # Logger definition
@@ -88,10 +89,10 @@ def kill_em_all(signal, frame):
 		Kill any pending screenshot process while capturing a SIGINT from the user
 	"""
 	global PID_LIST
-
-	for pid in PID_LIST:
-		os.kill(int(pid), signal.SIGKILL)
+	
+	for p in PID_LIST:
 		logger_gen.info("SIGINT received, trying to kill PID %s" % pid)
+		os.kill(p.pid, signal.SIGKILL)
 	
 	sys.exit(0)
 	
@@ -109,19 +110,31 @@ def shell_exec(url, command):
 	start = datetime.datetime.now()
 	
 	p = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	PID_LIST.append(p.pid)
+	PID_LIST.append(p)
 	
+	# phantomjs timeout
 	while p.poll() is None:
 		time.sleep(0.1)
 		now = datetime.datetime.now()
 		if (now - start).seconds > timeout:
 			logger_url.debug("Shell command PID %s reached the timeout, killing it now" % p.pid)
+			logger_url.error("Screenshot somehow failed\n")
 			os.kill(p.pid, signal.SIGKILL)
 			os.waitpid(-1, os.WNOHANG)
 			return SHELL_EXECUTION_ERROR
 	
-	logger_url.debug("Shell command PID %s ended normally" % p.pid)
-	return SHELL_EXECUTION_OK
+	retval = p.poll()
+	if retval != SHELL_EXECUTION_OK:
+		# phantomjs general error
+		logger_url.error("Shell command PID %s returned an abnormal error code: '%s'" % (p.pid,retval))
+		logger_url.error("Screenshot somehow failed\n")
+		return SHELL_EXECUTION_ERROR
+		
+	else:
+		# phantomjs ok
+		logger_url.debug("Shell command PID %s ended normally" % p.pid)
+		logger_url.info("Screenshot OK\n")
+		return SHELL_EXECUTION_OK
 
 def filter_bad_filename_chars(filename):
 	"""
@@ -219,7 +232,7 @@ def craft_cmd(url):
 	"""
 		Craft the correct command with url and options
 	"""
-	global logger_output, options, PHANTOMJS_BIN, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
+	global logger_output, options, PHANTOMJS_BIN, WEBSCREENSHOT_JS, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
 	
 	logger_url = logging.getLogger("%s" % url)
 	logger_url.addHandler(logger_output)
@@ -235,18 +248,13 @@ def craft_cmd(url):
 	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
 	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
 		
-	cmd_parameters.append('webscreenshot.js url_capture="%s" output_file="%s"' % (url, output_filename))
+	cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
 		
 	cmd = " ".join(cmd_parameters)
 	
-	logger_url.debug("Shell command to be executed\n'%s'" % cmd)
+	logger_url.debug("Shell command to be executed\n'%s'\n" % cmd)
 	
 	execution_retval = shell_exec(url, cmd)
-	
-	if execution_retval != SHELL_EXECUTION_OK:
-		logger_url.error("Screenshot somehow failed\n")
-	else:
-		logger_url.info("Screenshot OK\n")
 	
 	return execution_retval, url
 	
@@ -293,11 +301,11 @@ def main(options, arguments):
 		parser.error('Please specify a valid input file')
 	
 	if options.output_directory != None:
-		SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))) 
+		SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))
 	
 	logger_gen.debug("Options: %s" % options)
 	if not os.path.exists(SCREENSHOTS_DIRECTORY):
-		logger_gen.info("'%s' does not exist, will be then created" % SCREENSHOTS_DIRECTORY)
+		logger_gen.info("'%s' does not exist, will then be created" % SCREENSHOTS_DIRECTORY)
 		os.makedirs(SCREENSHOTS_DIRECTORY)
 		
 	url_list = parse_targets(options.input_file)
