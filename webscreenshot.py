@@ -47,7 +47,7 @@ option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity lev
 options = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
 
 # Script version
-VERSION = '1.3'
+VERSION = '1.2'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
