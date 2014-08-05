@@ -7,6 +7,7 @@ A simple script to screenshot a list of websites, based on a phantomjs script.
 
 Features
 --------
+* Fully functional on Windows and Linux systems
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepts several format as input target
 * Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication
@@ -105,11 +106,12 @@ total 61
 
 Requirements
 ------------
-* python >= 2.6
+* python 2.7
 * phantomjs: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation)  
 
 Changelog
 ---------
+* version 1.3 - 08/05/2014: Windows support + few bugs corrected
 * version 1.2 - 04/27/2014: few bugs corrected
 * version 1.1 - 04/21/2014: Changed the script to use phantomjs instead of the buggy wkhtml binary 
 * version 1.0 - 01/12/2014: Initial commit
