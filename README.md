@@ -86,12 +86,12 @@ webscreenshot.py version 1.1
 [INFO][General] 'https://173.194.67.113' has been formatted as 'https://173.194.67.113:443' with supplied overriding options
 [INFO][General] '173.194.67.113' has been formatted as 'http://173.194.67.113:80' with supplied overriding options
 [INFO][General] 'https://duckduckgo.com/robots.txt' has been formatted as 'https://duckduckgo.com:443/robots.txt' with supplied overriding options
-[+] 4 URLs to be screenshotted
+[+] 4 URLs to be screenshot
 [INFO][http://173.194.67.113:80] Screenshot OK
 [INFO][https://173.194.67.113:443] Screenshot OK
 [INFO][http://google.fr:80] Screenshot OK
 [INFO][https://duckduckgo.com:443/robots.txt] Screenshot OK
-[+] 4 actual URLs screenshotted
+[+] 4 actual URLs screenshot
 [+] 0 errors
 
 Results
