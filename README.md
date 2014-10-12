@@ -7,6 +7,7 @@ A simple script to screenshot a list of websites, based on the [`url-to-image`](
 
 Features
 --------
+* Integrating url-to-image 'lazy-rendering' for AJAX resources
 * Fully functional on Windows and Linux systems
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepts several format as input target
@@ -14,7 +15,7 @@ Features
 
 Usage
 -----
-Put your targets in a text file pass it to the script (-i).  
+Put your targets in a text file and pass it to the script (-i).  
 Screenshots will be available in your current ```./screenshots/``` directory (default).  
 Accepted input formats are the following:
 ```
@@ -23,7 +24,6 @@ domain_or_ip:port(/ressource)
 domain_or_ip(/ressource)
 ```
 
-See options for advanced usage
 ### Options
 ```
 $ python webscreenshot.py -h
@@ -72,8 +72,8 @@ Default execution
 $ python webscreenshot.py -i list.txt
 webscreenshot.py version 1.0
 
-[+] 4 URLs to be screenshotted
-[+] 4 actual URLs screenshotted
+[+] 4 URLs to be screenshot
+[+] 4 actual URLs screenshot
 [+] 0 errors
 
 
