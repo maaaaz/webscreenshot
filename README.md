@@ -3,7 +3,7 @@ webscreenshot
 
 Description
 -----------
-A simple script to screenshot a list of websites, based on a phantomjs script.
+A simple script to screenshot a list of websites, based on the [`url-to-image`](https://github.com/kimmobrunfeldt/url-to-image/) phantomjs script.
 
 Features
 --------
@@ -77,7 +77,7 @@ webscreenshot.py version 1.0
 [+] 0 errors
 
 
-Increased verbosity level execution
+Increasing verbosity level execution
 -----------------------------------
 $ python webscreenshot.py -i list.txt -l INFO
 webscreenshot.py version 1.1
@@ -111,6 +111,7 @@ Requirements
 
 Changelog
 ---------
+* version 1.4 - 10/12/2014: url-to-image phantomjs script integration + few bugs corrected
 * version 1.3 - 08/05/2014: Windows support + few bugs corrected
 * version 1.2 - 04/27/2014: few bugs corrected
 * version 1.1 - 04/21/2014: Changed the script to use phantomjs instead of the buggy wkhtml binary 

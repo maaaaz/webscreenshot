@@ -49,7 +49,7 @@ option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity lev
 options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
 
 # Script version
-VERSION = '1.3'
+VERSION = '1.4'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
@@ -65,7 +65,6 @@ logger_gen = logging.getLogger("General")
 logger_gen.addHandler(logger_output)
 
 # Macros
-PID_LIST = []
 SHELL_EXECUTION_OK = 0
 SHELL_EXECUTION_ERROR = -1
 
@@ -104,7 +103,7 @@ def shell_exec(url, command, options):
 		Execute a shell command following a timeout
 		Taken from http://howto.pui.ch/post/37471155682/set-timeout-for-a-shell-command-in-python
 	"""
-	global SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR, PID_LIST
+	global SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
 	
 	logger_url = logging.getLogger("%s" % url)
 	logger_url.setLevel(options.log_level)
@@ -232,8 +231,11 @@ def parse_targets(options):
 					port = options.port
 				elif 'port' in matches.keys():
 					port = int(matches['port'])
+					
+					# if port is 443, assume protocol is https if is not specified
+					protocol = 'https' if port == 443 else protocol
 				else:
-					port = '443' if protocol == 'https' else '80'
+					port = 443 if protocol == 'https' else 80
 				
 				# No resource URI by default
 				if 'res' in matches.keys():
@@ -264,7 +266,8 @@ def craft_cmd(url_and_options):
 	
 	# If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
 	cmd_parameters = [ 	PHANTOMJS_BIN,
-						'--ignore-ssl-errors true'
+						'--ignore-ssl-errors true',
+						'--ssl-protocol any'
 	]
 	
 	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
