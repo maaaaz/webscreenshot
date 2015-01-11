@@ -18,7 +18,7 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 **/
 
-var Page = (function() {
+var Page = (function(custom_headers) {
 	var opts = {
 		width: 1200,
 		height: 800,
@@ -36,10 +36,9 @@ var Page = (function() {
 		height: opts.height
 	};
 	page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36';
-	page.customHeaders = {
-	  // Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
-	  'Accept-Encoding': ' ',
-	};
+	
+	page.customHeaders = custom_headers;
+	
 	page.onInitialized = function() {
 		page.customHeaders = {};
 	};
@@ -89,7 +88,13 @@ function main() {
 	var system = require('system');
 	var p_url = new RegExp('url_capture=(.*)');
 	var p_outfile = new RegExp('output_file=(.*)');
-
+	var p_header = new RegExp('header=(.*)');
+	
+	var temp_custom_headers = {
+		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
+		'Accept-Encoding': ' '
+	};
+	
 	for(var i = 0; i < system.args.length; i++) {
 		if (p_url.test(system.args[i]) === true)
 		{
@@ -100,17 +105,27 @@ function main() {
 		{
 			var output_file = p_outfile.exec(system.args[i])[1];
 		}
+		
+		if (p_header.test(system.args[i]) === true)
+		{
+			var header = p_header.exec(system.args[i]);		
+			var p_header_split = header[1].split(': ', 2);
+			var header_name = p_header_split[0];
+			var header_value = p_header_split[1];
+				
+			temp_custom_headers[header_name] = header_value;
+			
+		}
 	}
 	
 	if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
-		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png>");
+		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png> [header=<custom header>]");
 		console.log('Please specify an URL to capture and an output png filename !');
 		
 		phantom.exit(1);
 	}
 	else {
-	
-		var page = Page();
+		var page = Page(temp_custom_headers);
 		page.render(URL, output_file);
 	}
 }

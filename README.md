@@ -9,6 +9,7 @@ Features
 --------
 * Integrating url-to-image 'lazy-rendering' for AJAX resources
 * Fully functional on Windows and Linux systems
+* Cookie and custom HTTP header definition support
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepts several format as input target
 * Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication
@@ -35,26 +36,33 @@ Options:
                         <INPUT_FILE>: text file containing the target list.
                         Ex: list.txt
   -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
-                        <OUTPUT_DIRECTORY>: screenshots output directory
-                        (default './screenshots/')
+                        <OUTPUT_DIRECTORY> (optional): screenshots output
+                        directory (default './screenshots/')
   -P PROXY, --proxy=PROXY
-                        <PROXY>: Specify a proxy. Ex: -P
+                        <PROXY> (optional): Specify a proxy. Ex: -P
                         http://proxy.company.com:8080
   -A PROXY_AUTH, --proxy-auth=PROXY_AUTH
-                        <PROXY_AUTH>: Provides authentication information for
-                        the proxy. Ex: -A user:password
-  -p PORT, --port=PORT  <PORT>: use the specified port for each target in the
-                        input list. Ex: -p 80
-  -s, --ssl             <SSL>: enforce ssl for every connection
+                        <PROXY_AUTH> (optional): Provides authentication
+                        information for the proxy. Ex: -A user:password
+  -p PORT, --port=PORT  <PORT> (optional): use the specified port for each
+                        target in the input list. Ex: -p 80
+  -s, --ssl             <SSL> (optional): enforce ssl for every connection
   -t TIMEOUT, --timeout=TIMEOUT
-                        <TIMEOUT>: phantomjs execution timeout in seconds
-                        (default 30 sec)
+                        <TIMEOUT> (optional): phantomjs execution timeout in
+                        seconds (default 30 sec)
+  -c COOKIE, --cookie=COOKIE
+                        <COOKIE_STRING> (optional): cookie string to add. Ex:
+                        -c "JSESSIONID=1234; YOLO=SWAG"
+  -a HEADER, --header=HEADER
+                        <HEADER> (optional): custom or additional header.
+                        Repeat this option for every header. Ex: -a "Host:
+                        localhost" -a "Foo: bar"
   -w WORKERS, --workers=WORKERS
-                        <WORKERS>: number of parallel execution workers
-                        (default 3)
+                        <WORKERS> (optional): number of parallel execution
+                        workers (default 2)
   -l LOG_LEVEL, --log-level=LOG_LEVEL
-                        <LOG_LEVEL> verbosity level { DEBUG, INFO, WARN,
-                        ERROR, CRITICAL } (default ERROR)
+                        <LOG_LEVEL> (optional): verbosity level { DEBUG, INFO,
+                        WARN, ERROR, CRITICAL } (default ERROR)
 ```
 
 ### Examples
@@ -111,6 +119,7 @@ Requirements
 
 Changelog
 ---------
+* version 1.5 - 01/11/2015: Cookie and custom HTTP header support
 * version 1.4 - 10/12/2014: url-to-image phantomjs script integration + few bugs corrected
 * version 1.3 - 08/05/2014: Windows support + few bugs corrected
 * version 1.2 - 04/27/2014: few bugs corrected

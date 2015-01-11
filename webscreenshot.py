@@ -37,19 +37,21 @@ from optparse import OptionParser
 
 # Options definition
 option_0 = { 'name' : ('-i', '--input-file'), 'help' : '<INPUT_FILE>: text file containing the target list. Ex: list.txt', 'nargs' : 1}
-option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY>: screenshots output directory (default \'./screenshots/\')', 'nargs' : 1}
-option_2 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY>: Specify a proxy. Ex: -P http://proxy.company.com:8080'}
-option_3 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH>: Provides authentication information for the proxy. Ex: -A user:password'}
-option_4 = { 'name' : ('-p', '--port'), 'help' : '<PORT>: use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
-option_5 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL>: enforce ssl for every connection', 'action' : 'store_true', 'default' : 'False'}
-option_6 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT>: phantomjs execution timeout in seconds (default 30 sec)', 'default' : '30', 'nargs' : 1}
-option_7 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS>: number of parallel execution workers (default 2)', 'default' : 2, 'nargs' : 1}
-option_8 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
+option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')', 'nargs' : 1}
+option_2 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY> (optional): Specify a proxy. Ex: -P http://proxy.company.com:8080'}
+option_3 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH> (optional): Provides authentication information for the proxy. Ex: -A user:password'}
+option_4 = { 'name' : ('-p', '--port'), 'help' : '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
+option_5 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL> (optional): enforce ssl for every connection', 'action' : 'store_true', 'default' : 'False'}
+option_6 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', 'default' : '30', 'nargs' : 1}
+option_7 = { 'name' : ('-c', '--cookie'), 'help' : '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', 'nargs' : 1}
+option_8 = { 'name' : ('-a', '--header'), 'help' : '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', 'action' : 'append'}
+option_9 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS> (optional): number of parallel execution workers (default 2)', 'default' : 2, 'nargs' : 1}
+option_10 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> (optional): verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
 
-options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8]
+options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
 
 # Script version
-VERSION = '1.4'
+VERSION = '1.5'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
@@ -274,7 +276,12 @@ def craft_cmd(url_and_options):
 	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
 		
 	cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
-		
+	cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
+	
+	if options.header:
+		for header in options.header:
+			cmd_parameters.append('header="%s"' % header.rstrip(';'))
+	
 	cmd = " ".join(cmd_parameters)
 	
 	logger_url.debug("Shell command to be executed\n'%s'\n" % cmd)
@@ -301,6 +308,7 @@ def take_screenshot(url_list, options):
 	screenshots_error_url = [url for retval, url in taken_screenshots if retval == SHELL_EXECUTION_ERROR]
 	screenshots_error = sum(retval == SHELL_EXECUTION_ERROR for retval, url in taken_screenshots)
 	screenshots_ok = int(screenshot_number - screenshots_error)
+	
 	print "[+] %s actual URLs screenshot" % screenshots_ok
 	print "[+] %s error(s)" % screenshots_error
 	
