@@ -16,7 +16,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
-**/
+***/
 
 var Page = (function(custom_headers) {
 	var opts = {
@@ -74,6 +74,11 @@ var Page = (function(custom_headers) {
 	};
 
 	function renderAndExit() {
+		// Trick to avoid transparent background
+		page.evaluate(function() {
+			document.body.bgColor = 'white';
+		});
+
 		page.render(opts.file);
 		phantom.exit(0);
 	}

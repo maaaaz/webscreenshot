@@ -51,7 +51,7 @@ option_10 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> (optional): 
 options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
 
 # Script version
-VERSION = '1.5'
+VERSION = '1.6'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
@@ -116,7 +116,7 @@ def shell_exec(url, command, options):
 	try :
 		p = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		
-		# phantomjs timeout
+		# Phantomjs timeout
 		while p.poll() is None:
 			time.sleep(0.1)
 			now = datetime.datetime.now()
@@ -133,13 +133,13 @@ def shell_exec(url, command, options):
 		
 		retval = p.poll()
 		if retval != SHELL_EXECUTION_OK:
-			# phantomjs general error
+			# Phantomjs general error
 			logger_url.error("Shell command PID %s returned an abnormal error code: '%s'" % (p.pid,retval))
 			logger_url.error("Screenshot somehow failed\n")
 			return SHELL_EXECUTION_ERROR
 			
 		else:
-			# phantomjs ok
+			# Phantomjs ok
 			logger_url.debug("Shell command PID %s ended normally" % p.pid)
 			logger_url.info("Screenshot OK\n")
 			return SHELL_EXECUTION_OK

@@ -119,6 +119,7 @@ Requirements
 
 Changelog
 ---------
+* version 1.6 - 04/23/2015: Transparent background fix
 * version 1.5 - 01/11/2015: Cookie and custom HTTP header support
 * version 1.4 - 10/12/2014: url-to-image phantomjs script integration + few bugs corrected
 * version 1.3 - 08/05/2014: Windows support + few bugs corrected
