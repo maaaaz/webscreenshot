@@ -38,20 +38,22 @@ from optparse import OptionParser
 # Options definition
 option_0 = { 'name' : ('-i', '--input-file'), 'help' : '<INPUT_FILE>: text file containing the target list. Ex: list.txt', 'nargs' : 1}
 option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')', 'nargs' : 1}
-option_2 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY> (optional): Specify a proxy. Ex: -P http://proxy.company.com:8080'}
-option_3 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH> (optional): Provides authentication information for the proxy. Ex: -A user:password'}
-option_4 = { 'name' : ('-p', '--port'), 'help' : '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
-option_5 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL> (optional): enforce ssl for every connection', 'action' : 'store_true', 'default' : 'False'}
-option_6 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', 'default' : '30', 'nargs' : 1}
-option_7 = { 'name' : ('-c', '--cookie'), 'help' : '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', 'nargs' : 1}
-option_8 = { 'name' : ('-a', '--header'), 'help' : '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', 'action' : 'append'}
-option_9 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS> (optional): number of parallel execution workers (default 2)', 'default' : 2, 'nargs' : 1}
-option_10 = { 'name' : ('-l', '--log-level'), 'help' : '<LOG_LEVEL> (optional): verbosity level { DEBUG, INFO, WARN, ERROR, CRITICAL } (default ERROR)', 'default' : 'ERROR', 'nargs' : 1 }
+option_2 = { 'name' : ('-u', '--http-username'), 'help' : '<HTTP_USERNAME> (optional): Specify a username for HTTP Basic Authentication.'}
+option_3 = { 'name' : ('-b', '--http-password'), 'help' : '<HTTP_PASSWORD> (optional): Specify a password for HTTP Basic Authentication.'}
+option_4 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY> (optional): Specify a proxy. Ex: -P http://proxy.company.com:8080'}
+option_5 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH> (optional): Provides authentication information for the proxy. Ex: -A user:password'}
+option_6 = { 'name' : ('-p', '--port'), 'help' : '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
+option_7 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL> (optional): enforce ssl for every connection', 'action' : 'store_true', 'default' : False}
+option_8 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', 'default' : 30, 'nargs' : 1}
+option_9 = { 'name' : ('-c', '--cookie'), 'help' : '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', 'nargs' : 1}
+option_10 = { 'name' : ('-a', '--header'), 'help' : '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', 'action' : 'append'}
+option_11 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS> (optional): number of parallel execution workers (default 2)', 'default' : 2, 'nargs' : 1}
+option_12 = { 'name' : ('-v', '--verbosity'), 'help' : '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', 'action' : 'count', 'default': 0}
 
-options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8, option_9, option_10]
+options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8, option_9, option_10, option_11, option_12]
 
 # Script version
-VERSION = '1.6'
+VERSION = '1.7'
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
@@ -60,6 +62,7 @@ WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
 
 # Logger definition
+LOGLEVELS = {0 : 'ERROR', 1 : 'INFO', 2 : 'DEBUG'}
 logger_output = logging.StreamHandler(sys.stdout)
 logger_output.setFormatter(logging.Formatter('[%(levelname)s][%(name)s] %(message)s'))
 
@@ -69,6 +72,7 @@ logger_gen.addHandler(logger_output)
 # Macros
 SHELL_EXECUTION_OK = 0
 SHELL_EXECUTION_ERROR = -1
+PHANTOMJS_HTTP_AUTH_ERROR_CODE = 2
 
 # Handful patterns
 p_ipv4_elementary = '(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})'
@@ -133,11 +137,16 @@ def shell_exec(url, command, options):
 		
 		retval = p.poll()
 		if retval != SHELL_EXECUTION_OK:
-			# Phantomjs general error
-			logger_url.error("Shell command PID %s returned an abnormal error code: '%s'" % (p.pid,retval))
-			logger_url.error("Screenshot somehow failed\n")
+			if retval == PHANTOMJS_HTTP_AUTH_ERROR_CODE:
+				# HTTP Authentication request
+				logger_url.error("HTTP Authentication requested, try to pass credentials with -u and -b options")
+			else:
+				# Phantomjs general error
+				logger_url.error("Shell command PID %s returned an abnormal error code: '%s'" % (p.pid,retval))
+				logger_url.error("Screenshot somehow failed\n")
+					
 			return SHELL_EXECUTION_ERROR
-			
+		
 		else:
 			# Phantomjs ok
 			logger_url.debug("Shell command PID %s ended normally" % p.pid)
@@ -150,7 +159,6 @@ def shell_exec(url, command, options):
 		else:
 			logger_gen.error('Unknown error: %s, exiting' % e )
 		return SHELL_EXECUTION_ERROR
-
 
 def filter_bad_filename_chars(filename):
 	"""
@@ -276,7 +284,11 @@ def craft_cmd(url_and_options):
 	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
 		
 	cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
+	
 	cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
+	
+	cmd_parameters.append('http_username="%s"' % options.http_username) if options.http_username != None else None
+	cmd_parameters.append('http_password="%s"' % options.http_password) if options.http_password != None else None
 	
 	if options.header:
 		for header in options.header:
@@ -322,23 +334,24 @@ def main(options, arguments):
 	"""
 		Dat main
 	"""
-	global VERSION, SCREENSHOTS_DIRECTORY
+	global VERSION, SCREENSHOTS_DIRECTORY, LOGLEVELS
 	signal.signal(signal.SIGINT, kill_em_all)
 	
 	print 'webscreenshot.py version %s\n' % VERSION
-	
+
 	try :
+		options.log_level = LOGLEVELS[options.verbosity]
 		logger_gen.setLevel(options.log_level)
 	except :
 		parser.error("Please specify a valid log level")
-	
+		
 	if (options.input_file == None):
 		parser.error('Please specify a valid input file')
 	
-	if options.output_directory != None:
+	if (options.output_directory != None):
 		SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))
 	
-	logger_gen.debug("Options: %s" % options)
+	logger_gen.debug("Options: %s\n" % options)
 	if not os.path.exists(SCREENSHOTS_DIRECTORY):
 		logger_gen.info("'%s' does not exist, will then be created" % SCREENSHOTS_DIRECTORY)
 		os.makedirs(SCREENSHOTS_DIRECTORY)

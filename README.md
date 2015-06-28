@@ -12,7 +12,7 @@ Features
 * Cookie and custom HTTP header definition support
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepts several format as input target
-* Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication
+* Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 
 Usage
 -----
@@ -38,6 +38,12 @@ Options:
   -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
                         <OUTPUT_DIRECTORY> (optional): screenshots output
                         directory (default './screenshots/')
+  -u HTTP_USERNAME, --http-username=HTTP_USERNAME
+                        <HTTP_USERNAME> (optional): Specify a username for
+                        HTTP Basic Authentication.
+  -b HTTP_PASSWORD, --http-password=HTTP_PASSWORD
+                        <HTTP_PASSWORD> (optional): Specify a password for
+                        HTTP Basic Authentication.
   -P PROXY, --proxy=PROXY
                         <PROXY> (optional): Specify a proxy. Ex: -P
                         http://proxy.company.com:8080
@@ -60,9 +66,9 @@ Options:
   -w WORKERS, --workers=WORKERS
                         <WORKERS> (optional): number of parallel execution
                         workers (default 2)
-  -l LOG_LEVEL, --log-level=LOG_LEVEL
-                        <LOG_LEVEL> (optional): verbosity level { DEBUG, INFO,
-                        WARN, ERROR, CRITICAL } (default ERROR)
+  -v, --verbosity       <VERBOSITY> (optional): verbosity level, repeat it to
+                        increase the level { -v INFO, -vv DEBUG } (default
+                        verbosity ERROR)
 ```
 
 ### Examples
@@ -87,7 +93,7 @@ webscreenshot.py version 1.0
 
 Increasing verbosity level execution
 -----------------------------------
-$ python webscreenshot.py -i list.txt -l INFO
+$ python webscreenshot.py -i list.txt -v
 webscreenshot.py version 1.1
 
 [INFO][General] 'http://google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
@@ -119,6 +125,7 @@ Requirements
 
 Changelog
 ---------
+* version 1.7 - 06/28/2015: HTTP basic authentication support + loglevel option changed to verbosity
 * version 1.6 - 04/23/2015: Transparent background fix
 * version 1.5 - 01/11/2015: Cookie and custom HTTP header support
 * version 1.4 - 10/12/2014: url-to-image phantomjs script integration + few bugs corrected

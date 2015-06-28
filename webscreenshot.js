@@ -18,12 +18,13 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-var Page = (function(custom_headers) {
+var Page = (function(custom_headers, http_username, http_password) {
 	var opts = {
 		width: 1200,
 		height: 800,
 		ajaxTimeout: 400,
-		maxTimeout: 800
+		maxTimeout: 800,
+		httpAuthErrorCode: 2
 	};
 	
 	var requestCount = 0;
@@ -35,7 +36,10 @@ var Page = (function(custom_headers) {
 		width: opts.width,
 		height: opts.height
 	};
+	
 	page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36';
+	page.settings.userName = http_username;
+	page.settings.password = http_password;
 	
 	page.customHeaders = custom_headers;
 	
@@ -51,6 +55,10 @@ var Page = (function(custom_headers) {
 	};
 
 	page.onResourceReceived = function(response) {
+		if (response.stage && response.stage == 'end' && response.status == '401') {
+			page.failReason = '401';
+		}
+		
 		if (!response.stage || response.stage === 'end') {
 			requestCount -= 1;
 			if (requestCount === 0) {
@@ -66,7 +74,13 @@ var Page = (function(custom_headers) {
 		
 		page.open(url, function(status) {
 			if (status !== "success") {
-				phantom.exit(1);
+				if (page.failReason && page.failReason == '401') {
+					// Specific 401 HTTP code hint
+					phantom.exit(opts.httpAuthErrorCode);
+				} else {
+					// All other failures
+					phantom.exit(1);
+				}
 			} else {
 				forceRenderTimeout = setTimeout(renderAndExit, opts.maxTimeout);
 			}
@@ -95,6 +109,12 @@ function main() {
 	var p_outfile = new RegExp('output_file=(.*)');
 	var p_header = new RegExp('header=(.*)');
 	
+	var p_http_username = new RegExp('http_username=(.*)');
+	var http_username = '';
+	
+	var p_http_password = new RegExp('http_password=(.*)');
+	var http_password = '';
+	
 	var temp_custom_headers = {
 		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
 		'Accept-Encoding': ' '
@@ -111,6 +131,16 @@ function main() {
 			var output_file = p_outfile.exec(system.args[i])[1];
 		}
 		
+		if (p_http_username.test(system.args[i]) === true)
+		{
+			http_username = p_http_username.exec(system.args[i])[1];
+		}
+		
+		if (p_http_password.test(system.args[i]) === true)
+		{
+			http_password = p_http_password.exec(system.args[i])[1];
+		}
+		
 		if (p_header.test(system.args[i]) === true)
 		{
 			var header = p_header.exec(system.args[i]);		
@@ -124,13 +154,13 @@ function main() {
 	}
 	
 	if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
-		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png> [header=<custom header>]");
+		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png> [header=<custom header> http_username=<HTTP basic auth username> http_password=<HTTP basic auth password>]");
 		console.log('Please specify an URL to capture and an output png filename !');
 		
 		phantom.exit(1);
 	}
 	else {
-		var page = Page(temp_custom_headers);
+		var page = Page(temp_custom_headers, http_username, http_password);
 		page.render(URL, output_file);
 	}
 }
