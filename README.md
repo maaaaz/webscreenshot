@@ -32,43 +32,52 @@ Usage: webscreenshot.py [options]
 
 Options:
   -h, --help            show this help message and exit
-  -i INPUT_FILE, --input-file=INPUT_FILE
+
+  Main parameters:
+    -i INPUT_FILE, --input-file=INPUT_FILE
                         <INPUT_FILE>: text file containing the target list.
                         Ex: list.txt
-  -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
+    -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
                         <OUTPUT_DIRECTORY> (optional): screenshots output
                         directory (default './screenshots/')
-  -u HTTP_USERNAME, --http-username=HTTP_USERNAME
-                        <HTTP_USERNAME> (optional): Specify a username for
-                        HTTP Basic Authentication.
-  -b HTTP_PASSWORD, --http-password=HTTP_PASSWORD
-                        <HTTP_PASSWORD> (optional): Specify a password for
-                        HTTP Basic Authentication.
-  -P PROXY, --proxy=PROXY
-                        <PROXY> (optional): Specify a proxy. Ex: -P
-                        http://proxy.company.com:8080
-  -A PROXY_AUTH, --proxy-auth=PROXY_AUTH
-                        <PROXY_AUTH> (optional): Provides authentication
-                        information for the proxy. Ex: -A user:password
-  -p PORT, --port=PORT  <PORT> (optional): use the specified port for each
+    -w WORKERS, --workers=WORKERS
+                        <WORKERS> (optional): number of parallel execution
+                        workers (default 2)
+    -v, --verbosity     <VERBOSITY> (optional): verbosity level, repeat it to
+                        increase the level { -v INFO, -vv DEBUG } (default
+                        verbosity ERROR)
+
+  Input processing parameters:
+    -p PORT, --port=PORT
+                        <PORT> (optional): use the specified port for each
                         target in the input list. Ex: -p 80
-  -s, --ssl             <SSL> (optional): enforce ssl for every connection
-  -t TIMEOUT, --timeout=TIMEOUT
-                        <TIMEOUT> (optional): phantomjs execution timeout in
-                        seconds (default 30 sec)
-  -c COOKIE, --cookie=COOKIE
+    -s, --ssl           <SSL> (optional): enforce ssl for every connection
+
+  HTTP parameters:
+    -c COOKIE, --cookie=COOKIE
                         <COOKIE_STRING> (optional): cookie string to add. Ex:
                         -c "JSESSIONID=1234; YOLO=SWAG"
-  -a HEADER, --header=HEADER
+    -a HEADER, --header=HEADER
                         <HEADER> (optional): custom or additional header.
                         Repeat this option for every header. Ex: -a "Host:
                         localhost" -a "Foo: bar"
-  -w WORKERS, --workers=WORKERS
-                        <WORKERS> (optional): number of parallel execution
-                        workers (default 2)
-  -v, --verbosity       <VERBOSITY> (optional): verbosity level, repeat it to
-                        increase the level { -v INFO, -vv DEBUG } (default
-                        verbosity ERROR)
+    -u HTTP_USERNAME, --http-username=HTTP_USERNAME
+                        <HTTP_USERNAME> (optional): specify a username for
+                        HTTP Basic Authentication.
+    -b HTTP_PASSWORD, --http-password=HTTP_PASSWORD
+                        <HTTP_PASSWORD> (optional): specify a password for
+                        HTTP Basic Authentication.
+
+  Connection parameters:
+    -P PROXY, --proxy=PROXY
+                        <PROXY> (optional): specify a proxy. Ex: -P
+                        http://proxy.company.com:8080
+    -A PROXY_AUTH, --proxy-auth=PROXY_AUTH
+                        <PROXY_AUTH> (optional): provides authentication
+                        information for the proxy. Ex: -A user:password
+    -t TIMEOUT, --timeout=TIMEOUT
+                        <TIMEOUT> (optional): phantomjs execution timeout in
+                        seconds (default 30 sec)
 ```
 
 ### Examples
@@ -125,6 +134,7 @@ Requirements
 
 Changelog
 ---------
+* version 1.8 - 07/05/2015: Option groups definition
 * version 1.7 - 06/28/2015: HTTP basic authentication support + loglevel option changed to verbosity
 * version 1.6 - 04/23/2015: Transparent background fix
 * version 1.5 - 01/11/2015: Cookie and custom HTTP header support

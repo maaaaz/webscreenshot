@@ -32,28 +32,39 @@ import shlex
 import logging
 import errno
 
+# Script version
+VERSION = '1.8'
+
 # OptionParser imports
 from optparse import OptionParser
+from optparse import OptionGroup
 
 # Options definition
-option_0 = { 'name' : ('-i', '--input-file'), 'help' : '<INPUT_FILE>: text file containing the target list. Ex: list.txt', 'nargs' : 1}
-option_1 = { 'name' : ('-o', '--output-directory'), 'help' : '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')', 'nargs' : 1}
-option_2 = { 'name' : ('-u', '--http-username'), 'help' : '<HTTP_USERNAME> (optional): Specify a username for HTTP Basic Authentication.'}
-option_3 = { 'name' : ('-b', '--http-password'), 'help' : '<HTTP_PASSWORD> (optional): Specify a password for HTTP Basic Authentication.'}
-option_4 = { 'name' : ('-P', '--proxy'), 'help' : '<PROXY> (optional): Specify a proxy. Ex: -P http://proxy.company.com:8080'}
-option_5 = { 'name' : ('-A', '--proxy-auth'), 'help' : '<PROXY_AUTH> (optional): Provides authentication information for the proxy. Ex: -A user:password'}
-option_6 = { 'name' : ('-p', '--port'), 'help' : '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', 'nargs' : 1}
-option_7 = { 'name' : ('-s', '--ssl'), 'help' : '<SSL> (optional): enforce ssl for every connection', 'action' : 'store_true', 'default' : False}
-option_8 = { 'name' : ('-t', '--timeout'), 'help' : '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', 'default' : 30, 'nargs' : 1}
-option_9 = { 'name' : ('-c', '--cookie'), 'help' : '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', 'nargs' : 1}
-option_10 = { 'name' : ('-a', '--header'), 'help' : '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', 'action' : 'append'}
-option_11 = { 'name' : ('-w', '--workers'), 'help' : '<WORKERS> (optional): number of parallel execution workers (default 2)', 'default' : 2, 'nargs' : 1}
-option_12 = { 'name' : ('-v', '--verbosity'), 'help' : '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', 'action' : 'count', 'default': 0}
+parser = OptionParser()
 
-options_definition = [option_0, option_1, option_2, option_3, option_4, option_5, option_6, option_7, option_8, option_9, option_10, option_11, option_12]
+main_grp = OptionGroup(parser, 'Main parameters')
+main_grp.add_option('-i', '--input-file', help = '<INPUT_FILE>: text file containing the target list. Ex: list.txt', nargs = 1)
+main_grp.add_option('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')', nargs = 1)
+main_grp.add_option('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 2)', default = 2, nargs = 1)
+main_grp.add_option('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
 
-# Script version
-VERSION = '1.7'
+proc_grp = OptionGroup(parser, 'Input processing parameters')
+proc_grp.add_option('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', nargs = 1)
+proc_grp.add_option('-s', '--ssl', help = '<SSL> (optional): enforce ssl for every connection', action = 'store_true', default = False)
+
+http_grp = OptionGroup(parser, 'HTTP parameters')
+http_grp.add_option('-c', '--cookie', help = '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', nargs = 1)
+http_grp.add_option('-a', '--header', help = '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', action = 'append')
+
+http_grp.add_option('-u', '--http-username', help = '<HTTP_USERNAME> (optional): specify a username for HTTP Basic Authentication.')
+http_grp.add_option('-b', '--http-password', help = '<HTTP_PASSWORD> (optional): specify a password for HTTP Basic Authentication.')
+
+conn_grp = OptionGroup(parser, 'Connection parameters')
+conn_grp.add_option('-P', '--proxy', help = '<PROXY> (optional): specify a proxy. Ex: -P http://proxy.company.com:8080')
+conn_grp.add_option('-A', '--proxy-auth', help = '<PROXY_AUTH> (optional): provides authentication information for the proxy. Ex: -A user:password')
+conn_grp.add_option('-t', '--timeout', help = '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', default = 30, nargs = 1)
+
+parser.option_groups.extend([main_grp, proc_grp, http_grp, conn_grp])
 
 # phantomjs binary, hoping to find it in a $PATH directory
 ## Be free to change it to your own full-path location 
@@ -363,11 +374,5 @@ def main(options, arguments):
 	return None
 
 if __name__ == "__main__" :
-	parser = OptionParser()
-	for option in options_definition:
-		param = option['name']
-		del option['name']
-		parser.add_option(*param, **option)
-
 	options, arguments = parser.parse_args()
 	main(options, arguments)
