@@ -130,7 +130,7 @@ total 61
 Requirements
 ------------
 * python 2.7
-* phantomjs: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation)  
+* phantomjs: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary  
 
 Changelog
 ---------
