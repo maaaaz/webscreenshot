@@ -33,7 +33,7 @@ import logging
 import errno
 
 # Script version
-VERSION = '1.8'
+VERSION = '1.9'
 
 # OptionParser imports
 from optparse import OptionParser
@@ -288,7 +288,8 @@ def craft_cmd(url_and_options):
 	# If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
 	cmd_parameters = [ 	PHANTOMJS_BIN,
 						'--ignore-ssl-errors true',
-						'--ssl-protocol any'
+						'--ssl-protocol any',
+						'--ssl-ciphers ALL'
 	]
 	
 	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None

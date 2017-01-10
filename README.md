@@ -130,10 +130,11 @@ total 61
 Requirements
 ------------
 * python 2.7
-* phantomjs: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary  
+* phantomjs > 2.x : follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary  
 
 Changelog
 ---------
+* version 1.9 - 01/10/2017: Using ALL SSL/TLS ciphers
 * version 1.8 - 07/05/2015: Option groups definition
 * version 1.7 - 06/28/2015: HTTP basic authentication support + loglevel option changed to verbosity
 * version 1.6 - 04/23/2015: Transparent background fix
