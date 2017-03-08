@@ -75,6 +75,10 @@ Options:
     -A PROXY_AUTH, --proxy-auth=PROXY_AUTH
                         <PROXY_AUTH> (optional): provides authentication
                         information for the proxy. Ex: -A user:password
+    -T PROXY_TYPE, --proxy-type=PROXY_TYPE
+                        <PROXY_TYPE> (optional): specifies the proxy type,
+                        "http" (default), "none" (disable completely), or
+                        "socks5". Ex: -T socks
     -t TIMEOUT, --timeout=TIMEOUT
                         <TIMEOUT> (optional): phantomjs execution timeout in
                         seconds (default 30 sec)
@@ -134,6 +138,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.0 - 03/08/2017: Adding proxy-type option
 * version 1.9 - 01/10/2017: Using ALL SSL/TLS ciphers
 * version 1.8 - 07/05/2015: Option groups definition
 * version 1.7 - 06/28/2015: HTTP basic authentication support + loglevel option changed to verbosity

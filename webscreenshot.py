@@ -62,6 +62,7 @@ http_grp.add_option('-b', '--http-password', help = '<HTTP_PASSWORD> (optional):
 conn_grp = OptionGroup(parser, 'Connection parameters')
 conn_grp.add_option('-P', '--proxy', help = '<PROXY> (optional): specify a proxy. Ex: -P http://proxy.company.com:8080')
 conn_grp.add_option('-A', '--proxy-auth', help = '<PROXY_AUTH> (optional): provides authentication information for the proxy. Ex: -A user:password')
+conn_grp.add_option('-T', '--proxy-type', help = '<PROXY_TYPE> (optional): specifies the proxy type, "http" (default), "none" (disable completely), or "socks5". Ex: -T socks')
 conn_grp.add_option('-t', '--timeout', help = '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', default = 30, nargs = 1)
 
 parser.option_groups.extend([main_grp, proc_grp, http_grp, conn_grp])
@@ -294,7 +295,8 @@ def craft_cmd(url_and_options):
 	
 	cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
 	cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
-		
+	cmd_parameters.append("--proxy-type %s" % options.proxy_type) if options.proxy_type != None else None
+
 	cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
 	
 	cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
