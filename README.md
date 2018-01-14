@@ -146,7 +146,7 @@ Requirements
 
 Changelog
 ---------
-* version 2.1 - 01/14/2017: Multiprotocol option addition and PyPI packaging
+* version 2.1 - 01/14/2018: Multiprotocol option addition and PyPI packaging
 * version 2.0 - 03/08/2017: Adding proxy-type option
 * version 1.9 - 01/10/2017: Using ALL SSL/TLS ciphers
 * version 1.8 - 07/05/2015: Option groups definition
