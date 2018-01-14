@@ -51,6 +51,7 @@ main_grp.add_option('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosi
 proc_grp = OptionGroup(parser, 'Input processing parameters')
 proc_grp.add_option('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', nargs = 1)
 proc_grp.add_option('-s', '--ssl', help = '<SSL> (optional): enforce ssl for every connection', action = 'store_true', default = False)
+proc_grp.add_option('-m', '--multi', help = '<MULTI> (optional): connect with AND without SSL/TLS to target', action = 'store_true', default = False) 
 
 http_grp = OptionGroup(parser, 'HTTP parameters')
 http_grp.add_option('-c', '--cookie', help = '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', nargs = 1)
@@ -265,9 +266,18 @@ def parse_targets(options):
 				else:
 					res = None
 				
-				final_uri = '%s://%s:%s' % (protocol, host, port)
-				final_uri = final_uri + '/%s' % res if res != None else final_uri
-				target_list.append(final_uri)
+				# multiple screenshots: over http AND https
+				if options.multi:
+					final_uri = '%s:%s' % (host, port)
+					final_uri_http = '%s://%s' % ('http', final_uri)
+					final_uri_https = '%s://%s' % ('https', final_uri)
+					target_list.append(final_uri_http)
+					target_list.append(final_uri_https)
+				else:
+					final_uri = '%s://%s:%s' % (protocol, host, port)
+					final_uri = final_uri + '/%s' % res if res != None else final_uri
+					target_list.append(final_uri)
+
 				logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri))
 	
 	return target_list		
