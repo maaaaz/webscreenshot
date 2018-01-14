@@ -52,6 +52,9 @@ Options:
                         <PORT> (optional): use the specified port for each
                         target in the input list. Ex: -p 80
     -s, --ssl           <SSL> (optional): enforce ssl for every connection
+    -m, --multiprotocol
+                        <MULTIPROTOCOL> (optional): perform screenshots over
+                        HTTP and HTTPS for each target
 
   HTTP parameters:
     -c COOKIE, --cookie=COOKIE
@@ -82,6 +85,7 @@ Options:
     -t TIMEOUT, --timeout=TIMEOUT
                         <TIMEOUT> (optional): phantomjs execution timeout in
                         seconds (default 30 sec)
+
 ```
 
 ### Examples
@@ -133,11 +137,16 @@ total 61
 
 Requirements
 ------------
-* python 2.7
-* phantomjs > 2.x : follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary  
+* Python 2.7
+* webscreenshot python script: 
+  * The **easiest way** to setup it: `pip install webscreenshot` and then directly use `$ webscreenshot` 
+  * Or git clone that repository
+* Phantomjs > 2.x : follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary
+
 
 Changelog
 ---------
+* version 2.1 - 01/14/2017: Multiprotocol option addition and PyPI packaging
 * version 2.0 - 03/08/2017: Adding proxy-type option
 * version 1.9 - 01/10/2017: Using ALL SSL/TLS ciphers
 * version 1.8 - 07/05/2015: Option groups definition
