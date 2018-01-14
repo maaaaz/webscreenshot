@@ -16,7 +16,7 @@ Features
 
 Usage
 -----
-Put your targets in a text file and pass it to the script (-i).  
+Put your targets in a text file and pass it to the script (`-i`).  
 Screenshots will be available in your current ```./screenshots/``` directory (default).  
 Accepted input formats are the following:
 ```
