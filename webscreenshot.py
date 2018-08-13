@@ -33,7 +33,7 @@ import logging
 import errno
 
 # Script version
-VERSION = '2.2'
+VERSION = '2.2.1'
 
 # OptionParser imports
 from optparse import OptionParser
