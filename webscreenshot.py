@@ -3,7 +3,7 @@
 
 # This file is part of webscreenshot.
 #
-# Copyright (C) 2014, Thomas Debize <tdebize at mail.com>
+# Copyright (C) 2018, Thomas Debize <tdebize at mail.com>
 # All rights reserved.
 #
 # webscreenshot is free software: you can redistribute it and/or modify
@@ -33,18 +33,19 @@ import logging
 import errno
 
 # Script version
-VERSION = '2.1'
+VERSION = '2.2'
 
 # OptionParser imports
 from optparse import OptionParser
 from optparse import OptionGroup
 
 # Options definition
-parser = OptionParser()
+parser = OptionParser(usage="usage: %prog [options] URL")
 
 main_grp = OptionGroup(parser, 'Main parameters')
 main_grp.add_option('-i', '--input-file', help = '<INPUT_FILE>: text file containing the target list. Ex: list.txt', nargs = 1)
 main_grp.add_option('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')', nargs = 1)
+main_grp.add_option('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium'], default = 'phantomjs', nargs = 1)
 main_grp.add_option('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 2)', default = 2, nargs = 1)
 main_grp.add_option('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
 
@@ -64,13 +65,16 @@ conn_grp = OptionGroup(parser, 'Connection parameters')
 conn_grp.add_option('-P', '--proxy', help = '<PROXY> (optional): specify a proxy. Ex: -P http://proxy.company.com:8080')
 conn_grp.add_option('-A', '--proxy-auth', help = '<PROXY_AUTH> (optional): provides authentication information for the proxy. Ex: -A user:password')
 conn_grp.add_option('-T', '--proxy-type', help = '<PROXY_TYPE> (optional): specifies the proxy type, "http" (default), "none" (disable completely), or "socks5". Ex: -T socks')
-conn_grp.add_option('-t', '--timeout', help = '<TIMEOUT> (optional): phantomjs execution timeout in seconds (default 30 sec)', default = 30, nargs = 1)
+conn_grp.add_option('-t', '--timeout', help = '<TIMEOUT> (optional): renderer execution timeout in seconds (default 30 sec)', default = 30, nargs = 1)
 
 parser.option_groups.extend([main_grp, proc_grp, http_grp, conn_grp])
 
-# phantomjs binary, hoping to find it in a $PATH directory
-## Be free to change it to your own full-path location 
+# renderer binaries, hoping to find it in a $PATH directory
+## Be free to change them to your own full-path location 
 PHANTOMJS_BIN = 'phantomjs'
+CHROME_BIN = 'google-chrome'
+CHROMIUM_BIN = 'chromium'
+
 WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
 
@@ -133,7 +137,7 @@ def shell_exec(url, command, options):
     try :
         p = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-        # Phantomjs timeout
+        # binaries timeout
         while p.poll() is None:
             time.sleep(0.1)
             now = datetime.datetime.now()
@@ -216,75 +220,77 @@ def entry_format_validator(line):
         if validator:
             return extract_all_matched_named_groups(regex, validator)
 
-def parse_targets(options):
+def parse_targets(options, arguments):
     """
         Parse list and convert each target to valid URI with port(protocol://foobar:port) 
     """
     
     target_list = []
-    fd = options.input_file
     
-    with open(fd,'rb') as fd_input:
-        try:
-            lines = [l.decode('utf-8').lstrip().rstrip().strip() for l in fd_input.readlines()]
-        except UnicodeDecodeError as e:
-            logger_gen.error('Your input file is not UTF-8 encoded, please encode it before using this script')
-            sys.exit(0)
+    if options.input_file != None:    
+        with open(options.input_file,'rb') as fd_input:
+            try:
+                lines = [l.decode('utf-8').lstrip().rstrip().strip() for l in fd_input.readlines()]
+            except UnicodeDecodeError as e:
+                logger_gen.error('Your input file is not UTF-8 encoded, please encode it before using this script')
+                sys.exit(0)
+    else:
+        lines = arguments
         
-        for index, line in enumerate(lines, start=1):
-            matches = entry_format_validator(line)
+    for index, line in enumerate(lines, start=1):
+        matches = entry_format_validator(line)
+        
+        # pass if line can be recognized as a correct input, or if no 'host' group could be found with all the regexes
+        if matches == None or not('host' in matches.keys()):
+            logger_gen.warn("Line %s '%s' could not have been recognized as a correct input" % (index, line))
+            pass
+        else:
+            host = matches['host']
             
-            # pass if line can be recognized as a correct input, or if no 'host' group could be found with all the regexes
-            if matches == None or not('host' in matches.keys()):
-                logger_gen.warn("Line %s '%s' could not have been recognized as a correct input" % (index, line))
-                pass
+            # Protocol is 'http' by default, unless ssl is forced
+            if options.ssl == True:
+                protocol = 'https'
+            elif 'protocol' in matches.keys():
+                protocol = str(matches['protocol'])
             else:
-                host = matches['host']
+                protocol = 'http'
+            
+            # Port is ('80' for http) or ('443' for https) by default, unless a specific port is supplied
+            if options.port != None:
+                port = options.port
+            elif 'port' in matches.keys():
+                port = int(matches['port'])
                 
-                # Protocol is 'http' by default, unless ssl is forced
-                if options.ssl == True:
-                    protocol = 'https'
-                elif 'protocol' in matches.keys():
-                    protocol = str(matches['protocol'])
-                else:
-                    protocol = 'http'
+                # if port is 443, assume protocol is https if is not specified
+                protocol = 'https' if port == 443 else protocol
+            else:
+                port = 443 if protocol == 'https' else 80
+            
+            # No resource URI by default
+            if 'res' in matches.keys():
+                res = str(matches['res'])
+            else:
+                res = None
+            
+            # perform screenshots over HTTP and HTTPS for each target
+            if options.multiprotocol:
+                final_uri_http_port = int(matches['port']) if 'port' in matches.keys() else 80
+                final_uri_http = '%s://%s:%s' % ('http', host, final_uri_http_port)
+                target_list.append(final_uri_http)
+                logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri_http))
                 
-                # Port is ('80' for http) or ('443' for https) by default, unless a specific port is supplied
-                if options.port != None:
-                    port = options.port
-                elif 'port' in matches.keys():
-                    port = int(matches['port'])
-                    
-                    # if port is 443, assume protocol is https if is not specified
-                    protocol = 'https' if port == 443 else protocol
-                else:
-                    port = 443 if protocol == 'https' else 80
                 
-                # No resource URI by default
-                if 'res' in matches.keys():
-                    res = str(matches['res'])
-                else:
-                    res = None
-                
-                # perform screenshots over HTTP and HTTPS for each target
-                if options.multiprotocol:
-                    final_uri_http_port = int(matches['port']) if 'port' in matches.keys() else 80
-                    final_uri_http = '%s://%s:%s' % ('http', host, final_uri_http_port)
-                    target_list.append(final_uri_http)
-                    logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri_http))
-                    
-                    
-                    final_uri_https_port = int(matches['port']) if 'port' in matches.keys() else 443
-                    final_uri_https = '%s://%s:%s' % ('https', host, final_uri_https_port)
-                    target_list.append(final_uri_https)
-                    logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri_https))
-                
-                else:
-                    final_uri = '%s://%s:%s' % (protocol, host, port)
-                    final_uri = final_uri + '/%s' % res if res != None else final_uri
-                    target_list.append(final_uri)
+                final_uri_https_port = int(matches['port']) if 'port' in matches.keys() else 443
+                final_uri_https = '%s://%s:%s' % ('https', host, final_uri_https_port)
+                target_list.append(final_uri_https)
+                logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri_https))
+            
+            else:
+                final_uri = '%s://%s:%s' % (protocol, host, port)
+                final_uri = final_uri + '/%s' % res if res != None else final_uri
+                target_list.append(final_uri)
 
-                    logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri))
+                logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri))
     
     return target_list      
 
@@ -302,27 +308,47 @@ def craft_cmd(url_and_options):
 
     output_filename = os.path.join(SCREENSHOTS_DIRECTORY, ('%s.png' % filter_bad_filename_chars(url)))
     
-    # If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
-    cmd_parameters = [  PHANTOMJS_BIN,
-                        '--ignore-ssl-errors true',
-                        '--ssl-protocol any',
-                        '--ssl-ciphers ALL'
-    ]
-    
-    cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
-    cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
-    cmd_parameters.append("--proxy-type %s" % options.proxy_type) if options.proxy_type != None else None
+    # PhantomJS renderer
+    if options.renderer == 'phantomjs':
+        # If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
+        cmd_parameters = [  PHANTOMJS_BIN,
+                            '--ignore-ssl-errors true',
+                            '--ssl-protocol any',
+                            '--ssl-ciphers ALL'
+        ]
+        
+        cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
+        cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
+        cmd_parameters.append("--proxy-type %s" % options.proxy_type) if options.proxy_type != None else None
 
-    cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
+        cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
+        
+        cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
+        
+        cmd_parameters.append('http_username="%s"' % options.http_username) if options.http_username != None else None
+        cmd_parameters.append('http_password="%s"' % options.http_password) if options.http_password != None else None
+        
+        if options.header:
+            for header in options.header:
+                cmd_parameters.append('header="%s"' % header.rstrip(';'))
     
-    cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
-    
-    cmd_parameters.append('http_username="%s"' % options.http_username) if options.http_username != None else None
-    cmd_parameters.append('http_password="%s"' % options.http_password) if options.http_password != None else None
-    
-    if options.header:
-        for header in options.header:
-            cmd_parameters.append('header="%s"' % header.rstrip(';'))
+    # Chrome and chromium renderers
+    else: 
+        cmd_parameters =  [ CHROME_BIN ] if options.renderer == 'chrome' else [ CHROMIUM_BIN ]
+        cmd_parameters += [ '--allow-running-insecure-content',
+                            '--ignore-certificate-errors',
+                            '--ignore-urlfetcher-cert-requests',
+                            '--reduce-security-for-testing',
+                            '--no-sandbox',
+                            '--headless',
+                            '--disable-gpu',
+                            '--hide-scrollbars',
+                            '--incognito',
+                            '-screenshot="%s"' % output_filename,
+                            '--window-size=1200,800',
+                            '"%s"' % url
+        ]
+        cmd_parameters.append('--proxy-server="%s"' % options.proxy) if options.proxy != None else None
     
     cmd = " ".join(cmd_parameters)
     
@@ -370,15 +396,18 @@ def main():
     print 'webscreenshot.py version %s\n' % VERSION
     
     options, arguments = parser.parse_args()
-    
+       
     try :
         options.log_level = LOGLEVELS[options.verbosity]
         logger_gen.setLevel(options.log_level)
     except :
         parser.error("Please specify a valid log level")
         
-    if (options.input_file == None):
-        parser.error('Please specify a valid input file')
+    if (options.input_file == None and (len(arguments) > 1 or len(arguments) == 0)):
+        parser.error('Please specify a valid input file or a valid URL')
+    
+    if (options.input_file != None and len(arguments) == 1):
+        parser.error('Please specify either an input file or an URL')
     
     if (options.output_directory != None):
         SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))
@@ -388,7 +417,7 @@ def main():
         logger_gen.info("'%s' does not exist, will then be created" % SCREENSHOTS_DIRECTORY)
         os.makedirs(SCREENSHOTS_DIRECTORY)
         
-    url_list = parse_targets(options)
+    url_list = parse_targets(options, arguments)
     
     take_screenshot(url_list, options)
     

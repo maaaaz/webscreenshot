@@ -7,16 +7,19 @@ A simple script to screenshot a list of websites, based on the [`url-to-image`](
 
 Features
 --------
-* Integrating url-to-image 'lazy-rendering' for AJAX resources
+* Integrating url-to-image *'lazy-rendering'* for AJAX resources
 * Fully functional on Windows and Linux systems
 * Cookie and custom HTTP header definition support
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepts several format as input target
 * Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
+* Supports multiple renderers: 
+  * PhantomJS, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
+  * Chrome and Chromium, which will replace PhantomJS but have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot. The reason is that the [--ignore-certificate-errors](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this rather complex method needing some third-party tools.
 
 Usage
 -----
-Put your targets in a text file and pass it to the script (`-i`).  
+Put your targets in a text file and pass it with the `-i` option, or as a positional argument if you have just a single URL.  
 Screenshots will be available in your current ```./screenshots/``` directory (default).  
 Accepted input formats are the following:
 ```
@@ -28,7 +31,9 @@ domain_or_ip(/ressource)
 ### Options
 ```
 $ python webscreenshot.py -h
-Usage: webscreenshot.py [options]
+webscreenshot.py version 2.2
+
+Usage: webscreenshot.py [options] URL
 
 Options:
   -h, --help            show this help message and exit
@@ -40,6 +45,10 @@ Options:
     -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
                         <OUTPUT_DIRECTORY> (optional): screenshots output
                         directory (default './screenshots/')
+    -r RENDERER, --renderer=RENDERER
+                        <RENDERER> (optional): renderer to use among
+                        'phantomjs' (legacy but best results), 'chrome',
+                        'chromium' (version > 57) (default 'phantomjs')
     -w WORKERS, --workers=WORKERS
                         <WORKERS> (optional): number of parallel execution
                         workers (default 2)
@@ -83,9 +92,8 @@ Options:
                         "http" (default), "none" (disable completely), or
                         "socks5". Ex: -T socks
     -t TIMEOUT, --timeout=TIMEOUT
-                        <TIMEOUT> (optional): phantomjs execution timeout in
+                        <TIMEOUT> (optional): renderer execution timeout in
                         seconds (default 30 sec)
-
 ```
 
 ### Examples
@@ -98,14 +106,27 @@ https://173.194.67.113
 https://duckduckgo.com/robots.txt
 
 
-Default execution
------------------
+Default execution with a list
+-----------------------------
 $ python webscreenshot.py -i list.txt
 webscreenshot.py version 1.0
 
 [+] 4 URLs to be screenshot
 [+] 4 actual URLs screenshot
 [+] 0 errors
+
+
+Default execution with a single URL
+-----------------------------------
+$ python webscreenshot.py -v https://google.fr 
+webscreenshot.py version 2.2
+
+[INFO][General] 'https://google.fr' has been formatted as 'https://google.fr:443' with supplied overriding options
+[+] 1 URLs to be screenshot
+[INFO][https://google.fr:443] Screenshot OK
+
+[+] 1 actual URLs screenshot
+[+] 0 error(s)
 
 
 Increasing verbosity level execution
@@ -142,10 +163,12 @@ Requirements
   * The **easiest way** to setup it: `pip install webscreenshot` and then directly use `$ webscreenshot` 
   * Or git clone that repository
 * Phantomjs > 2.x : follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary
-
+* `xvfb` if you want to run `webscreenshot` in an headless OS
+* Chrome or Chromium > 57 if you want to use one of these renderers
 
 Changelog
 ---------
+* version 2.2 - 08/13/2018: Chrome and Chromium renderers support and single URL support
 * version 2.1 - 01/14/2018: Multiprotocol option addition and PyPI packaging
 * version 2.0 - 03/08/2017: Adding proxy-type option
 * version 1.9 - 01/10/2017: Using ALL SSL/TLS ciphers
