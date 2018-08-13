@@ -15,7 +15,7 @@ Features
 * Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
   * PhantomJS, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
-  * Chrome and Chromium, which will replace PhantomJS but have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot. The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this rather complex method needing some third-party tools.
+  * Chrome and Chromium, which will replace PhantomJS but have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot. The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this rather complex method requiring some third-party tools.
 
 Usage
 -----
