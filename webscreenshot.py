@@ -172,7 +172,7 @@ def shell_exec(url, command, options):
     
     except Exception as e:
         if e.errno and e.errno == errno.ENOENT :
-            logger_url.error('phantomjs binary could not have been found in your current PATH environment variable, exiting')
+            logger_url.error('renderer binary could not have been found in your current PATH environment variable, exiting')
         else:
             logger_gen.error('Unknown error: %s, exiting' % e )
         return SHELL_EXECUTION_ERROR
