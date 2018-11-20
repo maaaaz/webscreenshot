@@ -158,7 +158,7 @@ total 61
 
 Requirements
 ------------
-* Python 2.7
+* Python 2.7, 3.x
 * webscreenshot python script: 
   * The **easiest way** to setup it: `pip install webscreenshot` and then directly use `$ webscreenshot` 
   * Or git clone that repository

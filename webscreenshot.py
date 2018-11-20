@@ -35,6 +35,13 @@ import errno
 # Script version
 VERSION = '2.2.1'
 
+if (sys.version_info >= (3, 0)):
+    getcwdu = os.getcwd
+    izip = zip
+else:
+    getcwdu = os.getcwdu
+    izip = itertools.izip
+
 # OptionParser imports
 from optparse import OptionParser
 from optparse import OptionGroup
@@ -76,7 +83,7 @@ CHROME_BIN = 'google-chrome'
 CHROMIUM_BIN = 'chromium'
 
 WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
-SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwd(), './screenshots/'))
+SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(getcwdu(), './screenshots/'))
 
 # Logger definition
 LOGLEVELS = {0 : 'ERROR', 1 : 'INFO', 2 : 'DEBUG'}
@@ -371,7 +378,7 @@ def take_screenshot(url_list, options):
     
     pool = multiprocessing.Pool(processes=int(options.workers), initializer=init_worker)
     
-    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=zip(url_list, itertools.repeat(options)))]
+    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=izip(url_list, itertools.repeat(options)))]
 
     screenshots_error_url = [url for retval, url in taken_screenshots if retval == SHELL_EXECUTION_ERROR]
     screenshots_error = sum(retval == SHELL_EXECUTION_ERROR for retval, url in taken_screenshots)
@@ -410,7 +417,7 @@ def main():
         parser.error('Please specify either an input file or an URL')
     
     if (options.output_directory != None):
-        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwd(), options.output_directory))
+        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(getcwdu(), options.output_directory))
     
     logger_gen.debug("Options: %s\n" % options)
     if not os.path.exists(SCREENSHOTS_DIRECTORY):
