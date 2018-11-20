@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # This file is part of webscreenshot.
@@ -76,7 +76,7 @@ CHROME_BIN = 'google-chrome'
 CHROMIUM_BIN = 'chromium'
 
 WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
-SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
+SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwd(), './screenshots/'))
 
 # Logger definition
 LOGLEVELS = {0 : 'ERROR', 1 : 'INFO', 2 : 'DEBUG'}
@@ -367,22 +367,22 @@ def take_screenshot(url_list, options):
     global SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
     
     screenshot_number = len(url_list)
-    print "[+] %s URLs to be screenshot" % screenshot_number
+    print("[+] %s URLs to be screenshot" % (screenshot_number))
     
     pool = multiprocessing.Pool(processes=int(options.workers), initializer=init_worker)
     
-    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=itertools.izip(url_list, itertools.repeat(options)))]
+    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=zip(url_list, itertools.repeat(options)))]
 
     screenshots_error_url = [url for retval, url in taken_screenshots if retval == SHELL_EXECUTION_ERROR]
     screenshots_error = sum(retval == SHELL_EXECUTION_ERROR for retval, url in taken_screenshots)
     screenshots_ok = int(screenshot_number - screenshots_error)
     
-    print "[+] %s actual URLs screenshot" % screenshots_ok
-    print "[+] %s error(s)" % screenshots_error
+    print("[+] %s actual URLs screenshot" % (screenshots_ok))
+    print("[+] %s error(s)" % (screenshots_error))
     
     if screenshots_error != 0:
         for url in screenshots_error_url:
-            print "    %s" % url
+            print("    %s" % (url))
 
     return None
     
@@ -393,7 +393,7 @@ def main():
     global VERSION, SCREENSHOTS_DIRECTORY, LOGLEVELS
     signal.signal(signal.SIGINT, kill_em_all)
     
-    print 'webscreenshot.py version %s\n' % VERSION
+    print('webscreenshot.py version %s\n' % (VERSION))
     
     options, arguments = parser.parse_args()
        
@@ -410,7 +410,7 @@ def main():
         parser.error('Please specify either an input file or an URL')
     
     if (options.output_directory != None):
-        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))
+        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwd(), options.output_directory))
     
     logger_gen.debug("Options: %s\n" % options)
     if not os.path.exists(SCREENSHOTS_DIRECTORY):
