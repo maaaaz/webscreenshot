@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+﻿#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # This file is part of webscreenshot.
@@ -19,6 +19,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with webscreenshot.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import re
 import os
 import sys
@@ -31,52 +35,65 @@ import itertools
 import shlex
 import logging
 import errno
+import argparse
+
+# Python 2 and 3 compatibility
+if (sys.version_info < (3, 0)):
+    os_getcwd = os.getcwdu
+    izip = itertools.izip
+    
+else:
+    os_getcwd = os.getcwd
+    izip = zip
 
 # Script version
-VERSION = '2.2.1'
+VERSION = '2.3'
 
-# OptionParser imports
-from optparse import OptionParser
-from optparse import OptionGroup
 
 # Options definition
-parser = OptionParser(usage="usage: %prog [options] URL")
+parser = argparse.ArgumentParser()
 
-main_grp = OptionGroup(parser, 'Main parameters')
-main_grp.add_option('-i', '--input-file', help = '<INPUT_FILE>: text file containing the target list. Ex: list.txt', nargs = 1)
-main_grp.add_option('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')', nargs = 1)
-main_grp.add_option('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium'], default = 'phantomjs', nargs = 1)
-main_grp.add_option('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 2)', default = 2, nargs = 1)
-main_grp.add_option('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
+main_grp = parser.add_argument_group('Main parameters')
+main_grp.add_argument('URL', help = 'Single URL target given as a positional argument', nargs = '?')
+main_grp.add_argument('-i', '--input-file', help = '<INPUT_FILE> text file containing the target list. Ex: list.txt')
+main_grp.add_argument('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')')
+main_grp.add_argument('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 4)', default = 4)
+main_grp.add_argument('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
 
-proc_grp = OptionGroup(parser, 'Input processing parameters')
-proc_grp.add_option('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80', nargs = 1)
-proc_grp.add_option('-s', '--ssl', help = '<SSL> (optional): enforce ssl for every connection', action = 'store_true', default = False)
-proc_grp.add_option('-m', '--multiprotocol', help = '<MULTIPROTOCOL> (optional): perform screenshots over HTTP and HTTPS for each target', action = 'store_true', default = False) 
+screenshot_grp = parser.add_argument_group('Screenshot parameters')
+screenshot_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'firefox'], type=str.lower, default = 'phantomjs')
+screenshot_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
+screenshot_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer', action = 'store_true', default = False)
+screenshot_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
 
-http_grp = OptionGroup(parser, 'HTTP parameters')
-http_grp.add_option('-c', '--cookie', help = '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"', nargs = 1)
-http_grp.add_option('-a', '--header', help = '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', action = 'append')
+proc_grp = parser.add_argument_group('Input processing parameters')
+proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
+proc_grp.add_argument('-s', '--ssl', help = '<SSL> (optional): enforce ssl for every connection', action = 'store_true', default = False)
+proc_grp.add_argument('-m', '--multiprotocol', help = '<MULTIPROTOCOL> (optional): perform screenshots over HTTP and HTTPS for each target', action = 'store_true', default = False) 
 
-http_grp.add_option('-u', '--http-username', help = '<HTTP_USERNAME> (optional): specify a username for HTTP Basic Authentication.')
-http_grp.add_option('-b', '--http-password', help = '<HTTP_PASSWORD> (optional): specify a password for HTTP Basic Authentication.')
+http_grp = parser.add_argument_group('HTTP parameters')
+http_grp.add_argument('-c', '--cookie', help = '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"')
+http_grp.add_argument('-a', '--header', help = '<HEADER> (optional): custom or additional header. Repeat this option for every header. Ex: -a "Host: localhost" -a "Foo: bar"', action = 'append')
 
-conn_grp = OptionGroup(parser, 'Connection parameters')
-conn_grp.add_option('-P', '--proxy', help = '<PROXY> (optional): specify a proxy. Ex: -P http://proxy.company.com:8080')
-conn_grp.add_option('-A', '--proxy-auth', help = '<PROXY_AUTH> (optional): provides authentication information for the proxy. Ex: -A user:password')
-conn_grp.add_option('-T', '--proxy-type', help = '<PROXY_TYPE> (optional): specifies the proxy type, "http" (default), "none" (disable completely), or "socks5". Ex: -T socks')
-conn_grp.add_option('-t', '--timeout', help = '<TIMEOUT> (optional): renderer execution timeout in seconds (default 30 sec)', default = 30, nargs = 1)
+http_grp.add_argument('-u', '--http-username', help = '<HTTP_USERNAME> (optional): specify a username for HTTP Basic Authentication.')
+http_grp.add_argument('-b', '--http-password', help = '<HTTP_PASSWORD> (optional): specify a password for HTTP Basic Authentication.')
 
-parser.option_groups.extend([main_grp, proc_grp, http_grp, conn_grp])
+conn_grp = parser.add_argument_group('Connection parameters')
+conn_grp.add_argument('-P', '--proxy', help = '<PROXY> (optional): specify a proxy. Ex: -P http://proxy.company.com:8080')
+conn_grp.add_argument('-A', '--proxy-auth', help = '<PROXY_AUTH> (optional): provides authentication information for the proxy. Ex: -A user:password')
+conn_grp.add_argument('-T', '--proxy-type', help = '<PROXY_TYPE> (optional): specifies the proxy type, "http" (default), "none" (disable completely), or "socks5". Ex: -T socks')
+conn_grp.add_argument('-t', '--timeout', help = '<TIMEOUT> (optional): renderer execution timeout in seconds (default 30 sec)', default = 30)
 
 # renderer binaries, hoping to find it in a $PATH directory
 ## Be free to change them to your own full-path location 
 PHANTOMJS_BIN = 'phantomjs'
 CHROME_BIN = 'google-chrome'
 CHROMIUM_BIN = 'chromium'
+FIREFOX_BIN = 'firefox'
+XVFB_BIN = "xvfb-run -a"
 
 WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
-SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), './screenshots/'))
+SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os_getcwd(), './screenshots/'))
 
 # Logger definition
 LOGLEVELS = {0 : 'ERROR', 1 : 'INFO', 2 : 'DEBUG'}
@@ -165,12 +182,12 @@ def shell_exec(url, command, options):
             return SHELL_EXECUTION_ERROR
         
         else:
-            # Phantomjs ok
             logger_url.debug("Shell command PID %s ended normally" % p.pid)
             logger_url.info("Screenshot OK\n")
             return SHELL_EXECUTION_OK
     
     except Exception as e:
+        print(e)
         if e.errno and e.errno == errno.ENOENT :
             logger_url.error('renderer binary could not have been found in your current PATH environment variable, exiting')
         else:
@@ -212,15 +229,14 @@ def entry_format_validator(line):
             'fqdn_and_port'         : fqdn_and_port, 
             'ipv4_and_port'         : ipv4_and_port, 
             'ipv4_only'             : ipv4_only, 
-            'entry_from_csv'        : entry_from_csv
-    }
+            'entry_from_csv'        : entry_from_csv }
     
     for name, regex in tab.items():
         validator = regex.match(line)
         if validator:
             return extract_all_matched_named_groups(regex, validator)
 
-def parse_targets(options, arguments):
+def parse_targets(options):
     """
         Parse list and convert each target to valid URI with port(protocol://foobar:port) 
     """
@@ -231,11 +247,12 @@ def parse_targets(options, arguments):
         with open(options.input_file,'rb') as fd_input:
             try:
                 lines = [l.decode('utf-8').lstrip().rstrip().strip() for l in fd_input.readlines()]
+            
             except UnicodeDecodeError as e:
                 logger_gen.error('Your input file is not UTF-8 encoded, please encode it before using this script')
                 sys.exit(0)
     else:
-        lines = arguments
+        lines = [options.URL]
         
     for index, line in enumerate(lines, start=1):
         matches = entry_format_validator(line)
@@ -292,13 +309,39 @@ def parse_targets(options, arguments):
 
                 logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri))
     
-    return target_list      
+    return target_list
+
+def craft_bin_path(options):
+    global PHANTOMJS_BIN, CHROME_BIN, CHROMIUM_BIN, FIREFOX_BIN, XVFB_BIN
+    
+    final_bin = []
+    
+    if options.no_xserver:
+        final_bin.append(XVFB_BIN)
+    
+    if options.renderer_binary != None: 
+        final_bin.append(options.renderer_binary)
+    
+    else:
+        if options.renderer == 'phantomjs':
+            final_bin.append(PHANTOMJS_BIN)
+        
+        elif options.renderer == 'chrome':
+            final_bin.append(CHROME_BIN)
+        
+        elif options.renderer == 'chromium':
+            final_bin.append(CHROMIUM_BIN)
+        
+        elif options.renderer == 'firefox':
+            final_bin.append(FIREFOX_BIN)
+        
+    return " ".join(final_bin)
 
 def craft_cmd(url_and_options):
     """
         Craft the correct command with url and options
     """
-    global logger_output, PHANTOMJS_BIN, WEBSCREENSHOT_JS, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
+    global logger_output, WEBSCREENSHOT_JS, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
     
     url, options = url_and_options
     
@@ -307,15 +350,14 @@ def craft_cmd(url_and_options):
     logger_url.setLevel(options.log_level)
 
     output_filename = os.path.join(SCREENSHOTS_DIRECTORY, ('%s.png' % filter_bad_filename_chars(url)))
-    
+        
     # PhantomJS renderer
     if options.renderer == 'phantomjs':
         # If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
-        cmd_parameters = [  PHANTOMJS_BIN,
-                            '--ignore-ssl-errors true',
-                            '--ssl-protocol any',
-                            '--ssl-ciphers ALL'
-        ]
+        cmd_parameters = [ craft_bin_path(options),
+                           '--ignore-ssl-errors true',
+                           '--ssl-protocol any',
+                           '--ssl-ciphers ALL' ]
         
         cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
         cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
@@ -328,14 +370,17 @@ def craft_cmd(url_and_options):
         cmd_parameters.append('http_username="%s"' % options.http_username) if options.http_username != None else None
         cmd_parameters.append('http_password="%s"' % options.http_password) if options.http_password != None else None
         
+        cmd_parameters.append('width=%d' % int(options.window_size.split(',')[0]))
+        cmd_parameters.append('height=%d' % int(options.window_size.split(',')[1]))
+        
         if options.header:
             for header in options.header:
                 cmd_parameters.append('header="%s"' % header.rstrip(';'))
     
     # Chrome and chromium renderers
-    else: 
-        cmd_parameters =  [ CHROME_BIN ] if options.renderer == 'chrome' else [ CHROMIUM_BIN ]
-        cmd_parameters += [ '--allow-running-insecure-content',
+    elif (options.renderer == 'chrome') or (options.renderer == 'chromium'): 
+        cmd_parameters =  [ craft_bin_path(options),
+                            '--allow-running-insecure-content',
                             '--ignore-certificate-errors',
                             '--ignore-urlfetcher-cert-requests',
                             '--reduce-security-for-testing',
@@ -345,11 +390,18 @@ def craft_cmd(url_and_options):
                             '--hide-scrollbars',
                             '--incognito',
                             '-screenshot="%s"' % output_filename,
-                            '--window-size=1200,800',
-                            '"%s"' % url
-        ]
+                            '--window-size="%s"' % options.window_size,
+                            '"%s"' % url ]
         cmd_parameters.append('--proxy-server="%s"' % options.proxy) if options.proxy != None else None
     
+    # Firefox renderer
+    elif options.renderer == 'firefox': 
+        cmd_parameters =  [ craft_bin_path(options),
+                            '--new-instance',
+                            '--screenshot="%s"' % output_filename,
+                            '--window-size="%s"' % options.window_size,
+                            '"%s"' % url ]
+                            
     cmd = " ".join(cmd_parameters)
     
     logger_url.debug("Shell command to be executed\n'%s'\n" % cmd)
@@ -367,22 +419,22 @@ def take_screenshot(url_list, options):
     global SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
     
     screenshot_number = len(url_list)
-    print "[+] %s URLs to be screenshot" % screenshot_number
+    print("[+] %s URLs to be screenshot" % screenshot_number)
     
     pool = multiprocessing.Pool(processes=int(options.workers), initializer=init_worker)
     
-    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=itertools.izip(url_list, itertools.repeat(options)))]
+    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=izip(url_list, itertools.repeat(options)))]
 
     screenshots_error_url = [url for retval, url in taken_screenshots if retval == SHELL_EXECUTION_ERROR]
     screenshots_error = sum(retval == SHELL_EXECUTION_ERROR for retval, url in taken_screenshots)
     screenshots_ok = int(screenshot_number - screenshots_error)
     
-    print "[+] %s actual URLs screenshot" % screenshots_ok
-    print "[+] %s error(s)" % screenshots_error
+    print("[+] %s actual URLs screenshot" % screenshots_ok)
+    print("[+] %s error(s)" % screenshots_error)
     
     if screenshots_error != 0:
         for url in screenshots_error_url:
-            print "    %s" % url
+            print("    %s" % url)
 
     return None
     
@@ -393,31 +445,31 @@ def main():
     global VERSION, SCREENSHOTS_DIRECTORY, LOGLEVELS
     signal.signal(signal.SIGINT, kill_em_all)
     
-    print 'webscreenshot.py version %s\n' % VERSION
+    print('webscreenshot.py version %s\n' % VERSION)
     
-    options, arguments = parser.parse_args()
-       
+    options = parser.parse_args()
+    
     try :
         options.log_level = LOGLEVELS[options.verbosity]
         logger_gen.setLevel(options.log_level)
     except :
         parser.error("Please specify a valid log level")
         
-    if (options.input_file == None and (len(arguments) > 1 or len(arguments) == 0)):
+    if (options.input_file == None) and (options.URL == None):
         parser.error('Please specify a valid input file or a valid URL')
     
-    if (options.input_file != None and len(arguments) == 1):
+    if (options.input_file != None) and (options.URL != None):
         parser.error('Please specify either an input file or an URL')
     
-    if (options.output_directory != None):
-        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwdu(), options.output_directory))
+    if options.output_directory != None:
+        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os_getcwd(), options.output_directory))
     
     logger_gen.debug("Options: %s\n" % options)
     if not os.path.exists(SCREENSHOTS_DIRECTORY):
         logger_gen.info("'%s' does not exist, will then be created" % SCREENSHOTS_DIRECTORY)
         os.makedirs(SCREENSHOTS_DIRECTORY)
         
-    url_list = parse_targets(options, arguments)
+    url_list = parse_targets(options)
     
     take_screenshot(url_list, options)
     

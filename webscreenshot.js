@@ -1,7 +1,7 @@
 /***
 # This file is part of webscreenshot.
 #
-# Copyright (C) 2014, Thomas Debize <tdebize at mail.com>
+# Copyright (C) 2014, 2019 Thomas Debize <tdebize at mail.com>
 # All rights reserved.
 #
 # webscreenshot is free software: you can redistribute it and/or modify
@@ -18,10 +18,10 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-var Page = (function(custom_headers, http_username, http_password) {
+var Page = (function(custom_headers, http_username, http_password, image_width, image_height) {
 	var opts = {
-		width: 1200,
-		height: 800,
+		width: image_width || 1200,
+		height: image_height || 800,
 		ajaxTimeout: 400,
 		maxTimeout: 800,
 		httpAuthErrorCode: 2
@@ -114,6 +114,12 @@ function main() {
 	
 	var p_http_password = new RegExp('http_password=(.*)');
 	var http_password = '';
+
+	var p_width = new RegExp('width=(.*)');
+	var image_width = '';
+	
+	var p_height = new RegExp('height=(.*)');
+	var image_height = '';
 	
 	var temp_custom_headers = {
 		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
@@ -151,6 +157,16 @@ function main() {
 			temp_custom_headers[header_name] = header_value;
 			
 		}
+		
+		if (p_width.test(system.args[i]) === true)
+		{
+			image_width = p_width.exec(system.args[i])[1];
+		}
+		
+		if (p_height.test(system.args[i]) === true)
+		{
+			image_height = p_height.exec(system.args[i])[1];
+		}
 	}
 	
 	if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
@@ -160,7 +176,7 @@ function main() {
 		phantom.exit(1);
 	}
 	else {
-		var page = Page(temp_custom_headers, http_username, http_password);
+		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height);
 		page.render(URL, output_file);
 	}
 }

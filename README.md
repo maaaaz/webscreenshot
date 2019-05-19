@@ -12,10 +12,15 @@ Features
 * Cookie and custom HTTP header definition support
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepts several format as input target
+* Customizing screenshot size (width, heigth)
 * Maps useful options of phantomjs such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
-  * PhantomJS, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
-  * Chrome and Chromium, which will replace PhantomJS but have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot. The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this rather complex method requiring some third-party tools.
+  * **PhantomJS**, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
+  * **Chrome and Chromium**, which will replace PhantomJS but have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot. 
+    The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this _rather complex_ method requiring some third-party tools.
+  * **Firefox** can also be used as a renderer but has some serious limitations (so don't use it for the moment):
+    * Impossibility to perform multiple screenshots at the time: no multi-instance of the firefox process
+    * No incognito mode, using webscreenshot will pollute your browsing history
 
 Usage
 -----
@@ -30,68 +35,85 @@ domain_or_ip(/ressource)
 
 ### Options
 ```
-$ python webscreenshot.py -h
-webscreenshot.py version 2.2
+webscreenshot.py version 2.3
 
-Usage: webscreenshot.py [options] URL
+usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
+                        [-w WORKERS] [-v]
+                        [-r {phantomjs,chrome,chromium,firefox}]
+                        [--renderer-binary RENDERER_BINARY] [--no-xserver]
+                        [--window-size WINDOW_SIZE] [-p PORT] [-s] [-m]
+                        [-c COOKIE] [-a HEADER] [-u HTTP_USERNAME]
+                        [-b HTTP_PASSWORD] [-P PROXY] [-A PROXY_AUTH]
+                        [-T PROXY_TYPE] [-t TIMEOUT]
+                        [URL]
 
-Options:
+optional arguments:
   -h, --help            show this help message and exit
 
-  Main parameters:
-    -i INPUT_FILE, --input-file=INPUT_FILE
-                        <INPUT_FILE>: text file containing the target list.
-                        Ex: list.txt
-    -o OUTPUT_DIRECTORY, --output-directory=OUTPUT_DIRECTORY
+Main parameters:
+  URL                   Single URL target given as a positional argument
+  -i INPUT_FILE, --input-file INPUT_FILE
+                        <INPUT_FILE> text file containing the target list. Ex:
+                        list.txt
+  -o OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
                         <OUTPUT_DIRECTORY> (optional): screenshots output
                         directory (default './screenshots/')
-    -r RENDERER, --renderer=RENDERER
-                        <RENDERER> (optional): renderer to use among
-                        'phantomjs' (legacy but best results), 'chrome',
-                        'chromium' (version > 57) (default 'phantomjs')
-    -w WORKERS, --workers=WORKERS
+  -w WORKERS, --workers WORKERS
                         <WORKERS> (optional): number of parallel execution
-                        workers (default 2)
-    -v, --verbosity     <VERBOSITY> (optional): verbosity level, repeat it to
+                        workers (default 4)
+  -v, --verbosity       <VERBOSITY> (optional): verbosity level, repeat it to
                         increase the level { -v INFO, -vv DEBUG } (default
                         verbosity ERROR)
 
-  Input processing parameters:
-    -p PORT, --port=PORT
-                        <PORT> (optional): use the specified port for each
+Screenshot parameters:
+  -r {phantomjs,chrome,chromium,firefox}, --renderer {phantomjs,chrome,chromium,firefox}
+                        <RENDERER> (optional): renderer to use among
+                        'phantomjs' (legacy but best results), 'chrome',
+                        'chromium', 'firefox' (version > 57) (default
+                        'phantomjs')
+  --renderer-binary RENDERER_BINARY
+                        <RENDERER_BINARY> (optional): path to the renderer
+                        executable if it cannot be found in $PATH
+  --no-xserver          <NO_X_SERVER> (optional): if you are running without
+                        an X server, will use xvfb-run to execute the renderer
+  --window-size WINDOW_SIZE
+                        <WINDOW_SIZE> (optional): width and height of the
+                        screen capture (default '1200,800')
+
+Input processing parameters:
+  -p PORT, --port PORT  <PORT> (optional): use the specified port for each
                         target in the input list. Ex: -p 80
-    -s, --ssl           <SSL> (optional): enforce ssl for every connection
-    -m, --multiprotocol
-                        <MULTIPROTOCOL> (optional): perform screenshots over
+  -s, --ssl             <SSL> (optional): enforce ssl for every connection
+  -m, --multiprotocol   <MULTIPROTOCOL> (optional): perform screenshots over
                         HTTP and HTTPS for each target
 
-  HTTP parameters:
-    -c COOKIE, --cookie=COOKIE
+HTTP parameters:
+  -c COOKIE, --cookie COOKIE
                         <COOKIE_STRING> (optional): cookie string to add. Ex:
                         -c "JSESSIONID=1234; YOLO=SWAG"
-    -a HEADER, --header=HEADER
+  -a HEADER, --header HEADER
                         <HEADER> (optional): custom or additional header.
                         Repeat this option for every header. Ex: -a "Host:
                         localhost" -a "Foo: bar"
-    -u HTTP_USERNAME, --http-username=HTTP_USERNAME
+  -u HTTP_USERNAME, --http-username HTTP_USERNAME
                         <HTTP_USERNAME> (optional): specify a username for
                         HTTP Basic Authentication.
-    -b HTTP_PASSWORD, --http-password=HTTP_PASSWORD
+  -b HTTP_PASSWORD, --http-password HTTP_PASSWORD
                         <HTTP_PASSWORD> (optional): specify a password for
                         HTTP Basic Authentication.
 
-  Connection parameters:
-    -P PROXY, --proxy=PROXY
+Connection parameters:
+  -P PROXY, --proxy PROXY
                         <PROXY> (optional): specify a proxy. Ex: -P
                         http://proxy.company.com:8080
-    -A PROXY_AUTH, --proxy-auth=PROXY_AUTH
+  -A PROXY_AUTH, --proxy-auth PROXY_AUTH
                         <PROXY_AUTH> (optional): provides authentication
                         information for the proxy. Ex: -A user:password
-    -T PROXY_TYPE, --proxy-type=PROXY_TYPE
+  -T PROXY_TYPE, --proxy-type PROXY_TYPE
                         <PROXY_TYPE> (optional): specifies the proxy type,
                         "http" (default), "none" (disable completely), or
                         "socks5". Ex: -T socks
-    -t TIMEOUT, --timeout=TIMEOUT
+  -t TIMEOUT, --timeout TIMEOUT
                         <TIMEOUT> (optional): renderer execution timeout in
                         seconds (default 30 sec)
 ```
@@ -101,29 +123,28 @@ Options:
 list.txt
 --------
 http://google.fr
-https://173.194.67.113
-173.194.67.113
+https://216.58.213.131
+216.58.213.131
 https://duckduckgo.com/robots.txt
 
 
 Default execution with a list
 -----------------------------
-$ python webscreenshot.py -i list.txt
-webscreenshot.py version 1.0
+$ python webscreenshot.py version 2.3
 
 [+] 4 URLs to be screenshot
 [+] 4 actual URLs screenshot
-[+] 0 errors
+[+] 0 error(s)
 
 
 Default execution with a single URL
 -----------------------------------
-$ python webscreenshot.py -v https://google.fr 
-webscreenshot.py version 2.2
+$ python webscreenshot.py -v google.fr
+webscreenshot.py version 2.3
 
-[INFO][General] 'https://google.fr' has been formatted as 'https://google.fr:443' with supplied overriding options
+[INFO][General] 'google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
 [+] 1 URLs to be screenshot
-[INFO][https://google.fr:443] Screenshot OK
+[INFO][http://google.fr:80] Screenshot OK
 
 [+] 1 actual URLs screenshot
 [+] 0 error(s)
@@ -132,42 +153,48 @@ webscreenshot.py version 2.2
 Increasing verbosity level execution
 -----------------------------------
 $ python webscreenshot.py -i list.txt -v
-webscreenshot.py version 1.1
+webscreenshot.py version 2.3
 
 [INFO][General] 'http://google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
-[INFO][General] 'https://173.194.67.113' has been formatted as 'https://173.194.67.113:443' with supplied overriding options
-[INFO][General] '173.194.67.113' has been formatted as 'http://173.194.67.113:80' with supplied overriding options
+[INFO][General] 'https://216.58.213.131' has been formatted as 'https://216.58.213.131:443' with supplied overriding options
+[INFO][General] '216.58.213.131' has been formatted as 'http://216.58.213.131:80' with supplied overriding options
 [INFO][General] 'https://duckduckgo.com/robots.txt' has been formatted as 'https://duckduckgo.com:443/robots.txt' with supplied overriding options
 [+] 4 URLs to be screenshot
-[INFO][http://173.194.67.113:80] Screenshot OK
-[INFO][https://173.194.67.113:443] Screenshot OK
-[INFO][http://google.fr:80] Screenshot OK
 [INFO][https://duckduckgo.com:443/robots.txt] Screenshot OK
+
+[INFO][http://216.58.213.131:80] Screenshot OK
+
+[INFO][https://216.58.213.131:443] Screenshot OK
+
+[INFO][http://google.fr:80] Screenshot OK
+
 [+] 4 actual URLs screenshot
-[+] 0 errors
+[+] 0 error(s)
+
 
 Results
 -------
 $ ls -l screenshots/
-total 61
--rwxrwxrwx 1 root root 35005 Jan 12 19:46 http___173.194.67.113_80.png
--rwxrwxrwx 1 root root 38152 Jan 12 19:46 http___google.fr_80.png
--rwxrwxrwx 1 root root 35005 Jan 12 19:46 https___173.194.67.113_443.png
--rwxrwxrwx 1 root root 12828 Jan 12 19:46 https___duckduckgo.com_443_robots.txt.png
+total 187
+-rwxrwxrwx 1 root root 53805 May 19 16:04 http_216.58.213.131_80.png
+-rwxrwxrwx 1 root root 53805 May 19 16:05 http_google.fr_80.png
+-rwxrwxrwx 1 root root 53805 May 19 16:04 https_216.58.213.131_443.png
+-rwxrwxrwx 1 root root 27864 May 19 16:04 https_duckduckgo.com_443_robots.txt.png
 ```
 
 Requirements
 ------------
-* Python 2.7
-* webscreenshot python script: 
+* A Python interpreter with version 2.7 or 3.X
+* The webscreenshot python script: 
   * The **easiest way** to setup it: `pip install webscreenshot` and then directly use `$ webscreenshot` 
-  * Or git clone that repository
-* Phantomjs > 2.x : follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary
-* `xvfb` if you want to run `webscreenshot` in an headless OS
-* Chrome or Chromium > 57 if you want to use one of these renderers
+  * Or git clone that repository and `pip install -r requirements.txt` and then `python webscreenshot.py`
+* The PhantomJS tool with at least version 2 : follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary
+* Chrome, Chromium or Firefox > 57 if you want to use one of these renderers
+* `xvfb` if you want to run `webscreenshot` in an headless OS: use the `--no-xserver` webscreenshot option to ease everything
 
 Changelog
 ---------
+* version 2.3 - 05/19/2019: Python 3 compatibility, Firefox renderer added, no-xserver option added
 * version 2.2 - 08/13/2018: Chrome and Chromium renderers support and single URL support
 * version 2.1 - 01/14/2018: Multiprotocol option addition and PyPI packaging
 * version 2.0 - 03/08/2017: Adding proxy-type option
