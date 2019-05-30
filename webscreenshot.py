@@ -47,7 +47,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.3'
+VERSION = '2.4'
 
 
 # Options definition
@@ -152,7 +152,7 @@ def shell_exec(url, command, options):
     start = datetime.datetime.now()
     
     try :
-        p = subprocess.Popen(shlex.split(command), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(command, posix="win" not in sys.platform), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # binaries timeout
         while p.poll() is None:
@@ -186,12 +186,13 @@ def shell_exec(url, command, options):
             logger_url.info("Screenshot OK\n")
             return SHELL_EXECUTION_OK
     
-    except Exception as e:
-        print(e)
+    except OSError as e:
         if e.errno and e.errno == errno.ENOENT :
             logger_url.error('renderer binary could not have been found in your current PATH environment variable, exiting')
-        else:
-            logger_gen.error('Unknown error: %s, exiting' % e )
+    
+    except Exception as err:
+        logger_gen.error('Unknown error: %s, exiting' % err)
+        
         return SHELL_EXECUTION_ERROR
 
 def filter_bad_filename_chars(filename):
@@ -320,7 +321,7 @@ def craft_bin_path(options):
         final_bin.append(XVFB_BIN)
     
     if options.renderer_binary != None: 
-        final_bin.append(options.renderer_binary)
+        final_bin.append(os.path.join(options.renderer_binary))
     
     else:
         if options.renderer == 'phantomjs':
@@ -337,11 +338,17 @@ def craft_bin_path(options):
         
     return " ".join(final_bin)
 
+def craft_arg(param):
+    if "win" in sys.platform.lower():
+        return '%s' % param
+    else:
+        return '"%s"' % param
+
 def craft_cmd(url_and_options):
     """
         Craft the correct command with url and options
     """
-    global logger_output, WEBSCREENSHOT_JS, SCREENSHOTS_DIRECTORY, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
+    global logger_output, WEBSCREENSHOT_JS, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
     
     url, options = url_and_options
     
@@ -349,26 +356,26 @@ def craft_cmd(url_and_options):
     logger_url.addHandler(logger_output)
     logger_url.setLevel(options.log_level)
 
-    output_filename = os.path.join(SCREENSHOTS_DIRECTORY, ('%s.png' % filter_bad_filename_chars(url)))
+    output_filename = os.path.join(options.output_directory, ('%s.png' % filter_bad_filename_chars(url)))
         
     # PhantomJS renderer
     if options.renderer == 'phantomjs':
         # If you ever want to add some voodoo options to the phantomjs command to be executed, that's here right below
         cmd_parameters = [ craft_bin_path(options),
-                           '--ignore-ssl-errors true',
-                           '--ssl-protocol any',
-                           '--ssl-ciphers ALL' ]
+                           '--ignore-ssl-errors=true',
+                           '--ssl-protocol=any',
+                           '--ssl-ciphers=ALL' ]
         
         cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
         cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
         cmd_parameters.append("--proxy-type %s" % options.proxy_type) if options.proxy_type != None else None
 
-        cmd_parameters.append('"%s" url_capture="%s" output_file="%s"' % (WEBSCREENSHOT_JS, url, output_filename))
+        cmd_parameters.append('%s url_capture=%s output_file=%s' % (craft_arg(WEBSCREENSHOT_JS), url, craft_arg(output_filename)))
         
         cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
         
-        cmd_parameters.append('http_username="%s"' % options.http_username) if options.http_username != None else None
-        cmd_parameters.append('http_password="%s"' % options.http_password) if options.http_password != None else None
+        cmd_parameters.append('http_username=%s' % options.http_username) if options.http_username != None else None
+        cmd_parameters.append('http_password=%s' % options.http_password) if options.http_password != None else None
         
         cmd_parameters.append('width=%d' % int(options.window_size.split(',')[0]))
         cmd_parameters.append('height=%d' % int(options.window_size.split(',')[1]))
@@ -389,18 +396,18 @@ def craft_cmd(url_and_options):
                             '--disable-gpu',
                             '--hide-scrollbars',
                             '--incognito',
-                            '-screenshot="%s"' % output_filename,
-                            '--window-size="%s"' % options.window_size,
-                            '"%s"' % url ]
-        cmd_parameters.append('--proxy-server="%s"' % options.proxy) if options.proxy != None else None
+                            '-screenshot=%s' % craft_arg(output_filename),
+                            '--window-size=%s' % options.window_size,
+                            '%s' % craft_arg(url) ]
+        cmd_parameters.append('--proxy-server=%s' % options.proxy) if options.proxy != None else None
     
     # Firefox renderer
     elif options.renderer == 'firefox': 
         cmd_parameters =  [ craft_bin_path(options),
                             '--new-instance',
-                            '--screenshot="%s"' % output_filename,
-                            '--window-size="%s"' % options.window_size,
-                            '"%s"' % url ]
+                            '--screenshot=%s' % craft_arg(output_filename),
+                            '--window-size=%s' % options.window_size,
+                            '%s' % craft_arg(url) ]
                             
     cmd = " ".join(cmd_parameters)
     
@@ -462,12 +469,14 @@ def main():
         parser.error('Please specify either an input file or an URL')
     
     if options.output_directory != None:
-        SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os_getcwd(), options.output_directory))
+        options.output_directory = os.path.join(os_getcwd(), options.output_directory)
+    else:
+        options.output_directory = SCREENSHOTS_DIRECTORY
     
     logger_gen.debug("Options: %s\n" % options)
-    if not os.path.exists(SCREENSHOTS_DIRECTORY):
-        logger_gen.info("'%s' does not exist, will then be created" % SCREENSHOTS_DIRECTORY)
-        os.makedirs(SCREENSHOTS_DIRECTORY)
+    if not os.path.exists(options.output_directory):
+        logger_gen.info("'%s' does not exist, will then be created" % options.output_directory)
+        os.makedirs(options.output_directory)
         
     url_list = parse_targets(options)
     

@@ -194,6 +194,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.4 - 05/30/2019: few fixes for Windows support
 * version 2.3 - 05/19/2019: Python 3 compatibility, Firefox renderer added, no-xserver option added
 * version 2.2 - 08/13/2018: Chrome and Chromium renderers support and single URL support
 * version 2.1 - 01/14/2018: Multiprotocol option addition and PyPI packaging
