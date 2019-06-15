@@ -26,7 +26,7 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 		maxTimeout: 800,
 		httpAuthErrorCode: 2
 	};
-	
+
 	var requestCount = 0;
 	var forceRenderTimeout;
 	var ajaxRenderTimeout;
@@ -36,13 +36,13 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 		width: opts.width,
 		height: opts.height
 	};
-	
+
 	page.settings.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1944.0 Safari/537.36';
 	page.settings.userName = http_username;
 	page.settings.password = http_password;
-	
+
 	page.customHeaders = custom_headers;
-	
+
 	page.onInitialized = function() {
 		page.customHeaders = {};
 	};
@@ -58,7 +58,7 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 		if (response.stage && response.stage == 'end' && response.status == '401') {
 			page.failReason = '401';
 		}
-		
+
 		if (!response.stage || response.stage === 'end') {
 			requestCount -= 1;
 			if (requestCount === 0) {
@@ -71,7 +71,7 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 
 	api.render = function(url, file) {
 		opts.file = file;
-		
+
 		page.open(url, function(status) {
 			if (status !== "success") {
 				if (page.failReason && page.failReason == '401') {
@@ -103,72 +103,71 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 });
 
 function main() {
-	
+
 	var system = require('system');
+
 	var p_url = new RegExp('url_capture=(.*)');
 	var p_outfile = new RegExp('output_file=(.*)');
 	var p_header = new RegExp('header=(.*)');
-	
+
 	var p_http_username = new RegExp('http_username=(.*)');
 	var http_username = '';
-	
+
 	var p_http_password = new RegExp('http_password=(.*)');
 	var http_password = '';
 
 	var p_width = new RegExp('width=(.*)');
 	var image_width = '';
-	
+
 	var p_height = new RegExp('height=(.*)');
 	var image_height = '';
-	
 	var temp_custom_headers = {
 		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
 		'Accept-Encoding': ' '
 	};
-	
+
 	for(var i = 0; i < system.args.length; i++) {
 		if (p_url.test(system.args[i]) === true)
 		{
 			var URL = p_url.exec(system.args[i])[1];
 		}
-		
+
 		if (p_outfile.test(system.args[i]) === true)
 		{
 			var output_file = p_outfile.exec(system.args[i])[1];
 		}
-		
+
 		if (p_http_username.test(system.args[i]) === true)
 		{
 			http_username = p_http_username.exec(system.args[i])[1];
 		}
-		
+
 		if (p_http_password.test(system.args[i]) === true)
 		{
 			http_password = p_http_password.exec(system.args[i])[1];
 		}
-		
+
 		if (p_header.test(system.args[i]) === true)
 		{
-			var header = p_header.exec(system.args[i]);		
+			var header = p_header.exec(system.args[i]);
 			var p_header_split = header[1].split(': ', 2);
 			var header_name = p_header_split[0];
 			var header_value = p_header_split[1];
-				
+
 			temp_custom_headers[header_name] = header_value;
-			
 		}
-		
+
 		if (p_width.test(system.args[i]) === true)
 		{
 			image_width = p_width.exec(system.args[i])[1];
 		}
-		
+
 		if (p_height.test(system.args[i]) === true)
 		{
 			image_height = p_height.exec(system.args[i])[1];
 		}
 	}
-	
+
 	if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
 		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png> [header=<custom header> http_username=<HTTP basic auth username> http_password=<HTTP basic auth password>]");
 		console.log('Please specify an URL to capture and an output png filename !');
