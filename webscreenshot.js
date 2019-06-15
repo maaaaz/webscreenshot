@@ -18,10 +18,12 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-var Page = (function(custom_headers, http_username, http_password, image_width, image_height) {
+var Page = (function(custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality) {
 	var opts = {
 		width: image_width || 1200,
 		height: image_height || 800,
+		format: image_format || 'png',
+		quality: image_quality || 70,
 		ajaxTimeout: 400,
 		maxTimeout: 800,
 		httpAuthErrorCode: 2
@@ -93,7 +95,7 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 			document.body.bgColor = 'white';
 		});
 
-		page.render(opts.file);
+		page.render(opts.file, {format: opts.format, quality: opts.quality});
 		phantom.exit(0);
 	}
 
@@ -121,6 +123,13 @@ function main() {
 
 	var p_height = new RegExp('height=(.*)');
 	var image_height = '';
+
+	var p_format = new RegExp('format=(.*)');
+	var image_format = '';
+
+	var p_quality = new RegExp('quality=(.*)');
+	var image_quality = '';
+
 	var temp_custom_headers = {
 		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
 		'Accept-Encoding': ' '
@@ -166,16 +175,26 @@ function main() {
 		{
 			image_height = p_height.exec(system.args[i])[1];
 		}
+
+		if (p_format.test(system.args[i]) === true)
+		{
+			image_format = p_format.exec(system.args[i])[1];
+		}
+
+		if (p_quality.test(system.args[i]) === true)
+		{
+			image_quality = p_quality.exec(system.args[i])[1];
+		}
 	}
 
 	if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
-		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file.png> [header=<custom header> http_username=<HTTP basic auth username> http_password=<HTTP basic auth password>]");
-		console.log('Please specify an URL to capture and an output png filename !');
-		
+		console.log("Usage: phantomjs [options] webscreenshot.js url_capture=<URL> output_file=<output_file> [header=<custom header> http_username=<HTTP basic auth username> http_password=<HTTP basic auth password>]");
+		console.log('Please specify an URL to capture and an output filename !');
+
 		phantom.exit(1);
 	}
 	else {
-		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height);
+		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality);
 		page.render(URL, output_file);
 	}
 }
