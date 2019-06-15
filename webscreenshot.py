@@ -65,6 +65,8 @@ screenshot_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): r
 screenshot_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
 screenshot_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer', action = 'store_true', default = False)
 screenshot_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
+screenshot_grp.add_argument('--format', help = '<FORMAT> (optional, phantomjs): specify an output image file format, "pdf", "png", "jpg", "jpeg", "bmp" or "ppm" (default \'png\')', choices = ['pdf', 'png', 'jpg', 'jpeg', 'bmp', 'ppm'], type=str.lower, default = 'png')
+screenshot_grp.add_argument('--quality', help = '<QUALITY> (optional, phantomjs): specify the output image quality, an integer between 0 and 100 (default 70)', default = 70)
 
 proc_grp = parser.add_argument_group('Input processing parameters')
 proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
@@ -356,7 +358,7 @@ def craft_cmd(url_and_options):
     logger_url.addHandler(logger_output)
     logger_url.setLevel(options.log_level)
 
-    output_filename = os.path.join(options.output_directory, ('%s.png' % filter_bad_filename_chars(url)))
+    output_filename = os.path.join(options.output_directory, ('%s.%s' % (filter_bad_filename_chars(url),options.format)))
 
     # PhantomJS renderer
     if options.renderer == 'phantomjs':
@@ -379,6 +381,10 @@ def craft_cmd(url_and_options):
 
         cmd_parameters.append('width=%d' % int(options.window_size.split(',')[0]))
         cmd_parameters.append('height=%d' % int(options.window_size.split(',')[1]))
+
+        cmd_parameters.append('format=%s' % options.format)
+        cmd_parameters.append('quality=%d' % int(options.quality))
+
         if options.header:
             for header in options.header:
                 cmd_parameters.append('header="%s"' % header.rstrip(';'))
