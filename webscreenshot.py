@@ -110,7 +110,7 @@ PHANTOMJS_HTTP_AUTH_ERROR_CODE = 2
 
 # Handful patterns
 p_ipv4_elementary = '(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})'
-p_domain = '[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,6}'
+p_domain = '[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+'
 p_port = '\d{0,5}'
 p_resource = '(?:/(?P<res>.*))?'
 
