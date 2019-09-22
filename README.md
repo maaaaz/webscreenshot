@@ -16,7 +16,7 @@ Features
 * Mapping useful options of PhantomJS such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
   * **PhantomJS**, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
-  * **Chrome and Chromium**, which will replace PhantomJS but currently have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot. 
+  * **Chrome and Chromium**, which will replace PhantomJS but currently have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot.  
     The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this _rather complex_ method requiring some third-party tools.
   * **Firefox** can also be used as a renderer but has some serious limitations (_so don't use it for the moment_):
     * Impossibility to perform multiple screenshots at the time: no multi-instance of the firefox process
@@ -181,9 +181,11 @@ total 187
 -rwxrwxrwx 1 root root 53805 May 19 16:04 https_216.58.213.131_443.png
 -rwxrwxrwx 1 root root 27864 May 19 16:04 https_duckduckgo.com_443_robots.txt.png
 ```
+  
 
 ### Supported options by renderers
-Options not listed here below are supported by every current renderers
+Options not listed here below are supported by every current renderers  
+
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
 |-----------------------|------------------------------------------------------------------------------|------------------------|--------------------------------|----------------------|
 | HTTP parameters       |                                                                              |                        |                                |                      |
@@ -198,8 +200,8 @@ Options not listed here below are supported by every current renderers
 |                       | proxy_type (`-T`)                                                              | Yes                    | No                             | No                   |
 |                       |                                                                              |                        |                                |                      |
 |                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | Yes                    | No                             | No                   |
-
-
+  
+  
 Requirements
 ------------
 * A Python interpreter with version 2.7 or 3.X
