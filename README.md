@@ -12,7 +12,7 @@ Features
 * Cookie and custom HTTP header definition support for the PhantomJS renderer
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
 * Accepting several formats as input target
-* Customizing screenshot size (width, height)
+* Customizing screenshot size (width, height), format and quality
 * Mapping useful options of PhantomJS such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
   * **PhantomJS**, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
