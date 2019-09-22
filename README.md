@@ -184,22 +184,22 @@ total 187
   
 
 ### Supported options by renderers
-Options not listed here below are supported by every current renderers  
+Options not listed here below are supported by every current renderer  
 
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
 |:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
 | **HTTP parameters**   |                                                                              |                        |                                |                      |
-|                       | cookie (`-c`)                                                                  | Yes                    | No                             | No                   |
-|                       | header (`-a`)                                                                  | Yes                    | No                             | No                   |
-|                       | http_username (`-u`)                                                           | Yes                    | No                             | No                   |
-|                       | http_password (`-b`)                                                           | Yes                    | No                             | No                   |
+|                       | cookie (`-c`)                                                                  | **Yes**                    | No                             | No                   |
+|                       | header (`-a`)                                                                  | **Yes**                    | No                             | No                   |
+|                       | http_username (`-u`)                                                           | **Yes**                    | No                             | No                   |
+|                       | http_password (`-b`)                                                           | **Yes**                    | No                             | No                   |
 |                       |                                                                              |                        |                                |                      |
 | **Connection parameters** |                                                                              |                        |                                |                      |
-|                       | proxy (`-P`)                                                                   | Yes                    | Yes                            | No                   |
-|                       | proxy_auth (`-A`)                                                              | Yes                    | No                             | No                   |
-|                       | proxy_type (`-T`)                                                              | Yes                    | No                             | No                   |
+|                       | proxy (`-P`)                                                                   | **Yes**                    | **Yes**                            | No                   |
+|                       | proxy_auth (`-A`)                                                              | **Yes**                    | No                             | No                   |
+|                       | proxy_type (`-T`)                                                              | **Yes**                    | No                             | No                   |
 |                       |                                                                              |                        |                                |                      |
-|                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | Yes                    | No                             | No                   |
+|                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | **Yes**                    | No                             | No                   |
   
   
 Requirements
