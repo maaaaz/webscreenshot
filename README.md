@@ -187,14 +187,14 @@ total 187
 Options not listed here below are supported by every current renderers  
 
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
-|-----------------------|------------------------------------------------------------------------------|------------------------|--------------------------------|----------------------|
-| HTTP parameters       |                                                                              |                        |                                |                      |
+|:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
+| **HTTP parameters**   |                                                                              |                        |                                |                      |
 |                       | cookie (`-c`)                                                                  | Yes                    | No                             | No                   |
 |                       | header (`-a`)                                                                  | Yes                    | No                             | No                   |
 |                       | http_username (`-u`)                                                           | Yes                    | No                             | No                   |
 |                       | http_password (`-b`)                                                           | Yes                    | No                             | No                   |
 |                       |                                                                              |                        |                                |                      |
-| Connection parameters |                                                                              |                        |                                |                      |
+| **Connection parameters** |                                                                              |                        |                                |                      |
 |                       | proxy (`-P`)                                                                   | Yes                    | Yes                            | No                   |
 |                       | proxy_auth (`-A`)                                                              | Yes                    | No                             | No                   |
 |                       | proxy_type (`-T`)                                                              | Yes                    | No                             | No                   |
