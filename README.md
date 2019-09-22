@@ -35,14 +35,15 @@ domain_or_ip(/ressource)
 
 ### Options
 ```
-webscreenshot.py version 2.3
+webscreenshot.py version 2.5
 
 usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
                         [-w WORKERS] [-v]
                         [-r {phantomjs,chrome,chromium,firefox}]
                         [--renderer-binary RENDERER_BINARY] [--no-xserver]
-                        [--window-size WINDOW_SIZE] [-p PORT] [-s] [-m]
-                        [-c COOKIE] [-a HEADER] [-u HTTP_USERNAME]
+                        [--window-size WINDOW_SIZE]
+                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]] [-p PORT]
+                        [-s] [-m] [-c COOKIE] [-a HEADER] [-u HTTP_USERNAME]
                         [-b HTTP_PASSWORD] [-P PROXY] [-A PROXY_AUTH]
                         [-T PROXY_TYPE] [-t TIMEOUT]
                         [URL]
@@ -79,6 +80,14 @@ Screenshot parameters:
   --window-size WINDOW_SIZE
                         <WINDOW_SIZE> (optional): width and height of the
                         screen capture (default '1200,800')
+  -f {pdf,png,jpg,jpeg,bmp,ppm}, --format {pdf,png,jpg,jpeg,bmp,ppm}
+                        <FORMAT> (optional, phantomjs only): specify an output
+                        image file format, "pdf", "png", "jpg", "jpeg", "bmp"
+                        or "ppm" (default 'png')
+  -q [0-100], --quality [0-100]
+                        <QUALITY> (optional, phantomjs only): specify the
+                        output image quality, an integer between 0 and 100
+                        (default 75)
 
 Input processing parameters:
   -p PORT, --port PORT  <PORT> (optional): use the specified port for each
@@ -188,6 +197,10 @@ Options not listed here below are supported by every current renderer
 
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
 |:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
+| **Screenshot parameters**   |                                                                              |                        |                                |                      |
+|                       | format (`-f`)                                                                  | **Yes**                    | No                             | No                   |
+|                       | quality (`-q`)                                                                  | **Yes**                    | No                             | No                   
+|                       |                                                                              |                        |                                |                      |
 | **HTTP parameters**   |                                                                              |                        |                                |                      |
 |                       | cookie (`-c`)                                                                  | **Yes**                    | No                             | No                   |
 |                       | header (`-a`)                                                                  | **Yes**                    | No                             | No                   |
@@ -214,7 +227,8 @@ Requirements
 
 Changelog
 ---------
-* version 2.4 - 05/30/2019: few fixes for Windows support
+* version 2.5 - 09/22/2019: Image quality and format options added, PhantomJS useragent updated, modern TLD support
+* version 2.4 - 05/30/2019: Few fixes for Windows support
 * version 2.3 - 05/19/2019: Python 3 compatibility, Firefox renderer added, no-xserver option added
 * version 2.2 - 08/13/2018: Chrome and Chromium renderers support and single URL support
 * version 2.1 - 01/14/2018: Multiprotocol option addition and PyPI packaging
@@ -224,10 +238,10 @@ Changelog
 * version 1.7 - 06/28/2015: HTTP basic authentication support + loglevel option changed to verbosity
 * version 1.6 - 04/23/2015: Transparent background fix
 * version 1.5 - 01/11/2015: Cookie and custom HTTP header support
-* version 1.4 - 10/12/2014: url-to-image phantomjs script integration + few bugs corrected
+* version 1.4 - 10/12/2014: url-to-image PhantomJS script integration + few bugs corrected
 * version 1.3 - 08/05/2014: Windows support + few bugs corrected
-* version 1.2 - 04/27/2014: few bugs corrected
-* version 1.1 - 04/21/2014: Changed the script to use phantomjs instead of the buggy wkhtml binary 
+* version 1.2 - 04/27/2014: Few bugs corrected
+* version 1.1 - 04/21/2014: Changed the script to use PhantomJS instead of the buggy wkhtml binary 
 * version 1.0 - 01/12/2014: Initial commit
 
 Copyright and license
