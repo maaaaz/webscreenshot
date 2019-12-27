@@ -227,6 +227,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.6 - 12/27/2019: Few fixes
 * version 2.5 - 09/22/2019: Image quality and format options added, PhantomJS useragent updated, modern TLD support
 * version 2.4 - 05/30/2019: Few fixes for Windows support
 * version 2.3 - 05/19/2019: Python 3 compatibility, Firefox renderer added, no-xserver option added

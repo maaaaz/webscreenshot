@@ -36,6 +36,7 @@ import shlex
 import logging
 import errno
 import argparse
+import base64
 
 # Python 2 and 3 compatibility
 if (sys.version_info < (3, 0)):
@@ -47,8 +48,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.5'
-
+VERSION = '2.6'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -262,7 +262,7 @@ def parse_targets(options):
         
         # pass if line can be recognized as a correct input, or if no 'host' group could be found with all the regexes
         if matches == None or not('host' in matches.keys()):
-            logger_gen.warn("Line %s '%s' could not have been recognized as a correct input" % (index, line))
+            logger_gen.warning("Line %s '%s' could not have been recognized as a correct input" % (index, line))
             pass
         else:
             host = matches['host']
@@ -281,8 +281,9 @@ def parse_targets(options):
             elif 'port' in matches.keys():
                 port = int(matches['port'])
                 
-                # if port is 443, assume protocol is https if is not specified
-                protocol = 'https' if port == 443 else protocol
+                # if port is 443 and no protocol has been found earlier, assume protocol is https
+                if port == 443 and not('protocol' in matches.keys()):
+                    protocol = 'https'
             else:
                 port = 443 if protocol == 'https' else 80
             
@@ -377,8 +378,14 @@ def craft_cmd(url_and_options):
         
         cmd_parameters.append('header="Cookie: %s"' % options.cookie.rstrip(';')) if options.cookie != None else None
         
-        cmd_parameters.append('http_username=%s' % options.http_username) if options.http_username != None else None
-        cmd_parameters.append('http_password=%s' % options.http_password) if options.http_password != None else None
+        if options.http_username != None:
+            if options.http_password != None:
+                basic_authentication_header = base64.b64encode(str("%s:%s" % (options.http_username, options.http_password)).encode()).decode()
+            
+            else:
+                basic_authentication_header = base64.b64encode(str("%s:" % (options.http_username)).encode()).decode()
+            
+            cmd_parameters.append('header="Authorization: Basic %s"' % basic_authentication_header)
         
         cmd_parameters.append('width=%d' % int(options.window_size.split(',')[0]))
         cmd_parameters.append('height=%d' % int(options.window_size.split(',')[1]))
