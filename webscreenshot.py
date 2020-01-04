@@ -372,7 +372,7 @@ def craft_cmd(url_and_options):
     """
         Craft the correct command with url and options
     """
-    global logger_output, WEBSCREENSHOT_JS, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR, IMAGEMAGICK_BIN
+    global logger_output, WEBSCREENSHOT_JS, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
     
     url, options = url_and_options
     
