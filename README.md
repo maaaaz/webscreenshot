@@ -21,6 +21,7 @@ Features
   * **Firefox** can also be used as a renderer but has some serious limitations (_so don't use it for the moment_):
     * Impossibility to perform multiple screenshots at the time: no multi-instance of the firefox process
     * No incognito mode, using webscreenshot will pollute your browsing history
+* Embedding screenshot URL in image (requires `ImageMagick`) 
 
 Usage
 -----
@@ -35,14 +36,15 @@ domain_or_ip(/ressource)
 
 ### Options
 ```
-webscreenshot.py version 2.5
+webscreenshot.py version 2.7
 
 usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
                         [-w WORKERS] [-v]
                         [-r {phantomjs,chrome,chromium,firefox}]
                         [--renderer-binary RENDERER_BINARY] [--no-xserver]
                         [--window-size WINDOW_SIZE]
-                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]] [-p PORT]
+                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]] [-l]
+                        [--imagemagick-binary IMAGEMAGICK_BINARY] [-p PORT]
                         [-s] [-m] [-c COOKIE] [-a HEADER] [-u HTTP_USERNAME]
                         [-b HTTP_PASSWORD] [-P PROXY] [-A PROXY_AUTH]
                         [-T PROXY_TYPE] [-t TIMEOUT]
@@ -88,6 +90,13 @@ Screenshot parameters:
                         <QUALITY> (optional, phantomjs only): specify the
                         output image quality, an integer between 0 and 100
                         (default 75)
+  -l, --label           <LABEL> (optional): for each screenshot, create
+                        another one displaying inside the target URL (requires
+                        imagemagick)
+  --imagemagick-binary IMAGEMAGICK_BINARY
+                        <LABEL_BINARY> (optional): path to the imagemagick
+                        binary (magick or convert) if it cannot be found in
+                        $PATH
 
 Input processing parameters:
   -p PORT, --port PORT  <PORT> (optional): use the specified port for each
@@ -224,9 +233,11 @@ Requirements
 * The PhantomJS tool with at least version 2: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary
 * Chrome, Chromium or Firefox > 57 if you want to use one of these renderers
 * `xvfb` if you want to run `webscreenshot` in an headless OS: use the `--no-xserver` webscreenshot option to ease everything
+* `ImageMagick` binary (`magick` or `convert`) if you want to embed URL in screenshots with the `--label` option: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/ImageMagick-installation)
 
 Changelog
 ---------
+* version 2.7 - 01/04/2020: URL embedding in screenshot option added
 * version 2.6 - 12/27/2019: Few fixes
 * version 2.5 - 09/22/2019: Image quality and format options added, PhantomJS useragent updated, modern TLD support
 * version 2.4 - 05/30/2019: Few fixes for Windows support

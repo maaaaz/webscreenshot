@@ -48,7 +48,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.6'
+VERSION = '2.7'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -67,6 +67,8 @@ screenshot_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if
 screenshot_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
 screenshot_grp.add_argument('-f', '--format', help = '<FORMAT> (optional, phantomjs only): specify an output image file format, "pdf", "png", "jpg", "jpeg", "bmp" or "ppm" (default \'png\')', choices = ['pdf', 'png', 'jpg', 'jpeg', 'bmp', 'ppm'], type=str.lower, default = 'png')
 screenshot_grp.add_argument('-q', '--quality', help = '<QUALITY> (optional, phantomjs only): specify the output image quality, an integer between 0 and 100 (default 75)', metavar="[0-100]", choices = range(0,101), type=int, default = 75)
+screenshot_grp.add_argument('-l', '--label', help = '<LABEL> (optional): for each screenshot, create another one displaying inside the target URL (requires imagemagick)', action = 'store_true', default = False)
+screenshot_grp.add_argument('--imagemagick-binary', help = '<LABEL_BINARY> (optional): path to the imagemagick binary (magick or convert) if it cannot be found in $PATH')
 
 proc_grp = parser.add_argument_group('Input processing parameters')
 proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
@@ -93,6 +95,7 @@ CHROME_BIN = 'google-chrome'
 CHROMIUM_BIN = 'chromium'
 FIREFOX_BIN = 'firefox'
 XVFB_BIN = "xvfb-run -a"
+IMAGEMAGICK_BIN = "convert"
 
 WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os_getcwd(), './screenshots/'))
@@ -140,7 +143,7 @@ def kill_em_all(signal, frame):
     logger_gen.info('CTRL-C received, exiting')
     sys.exit(0)
     
-def shell_exec(url, command, options):
+def shell_exec(url, command, options, context):
     """
         Execute a shell command following a timeout
         Taken from http://howto.pui.ch/post/37471155682/set-timeout-for-a-shell-command-in-python
@@ -190,11 +193,11 @@ def shell_exec(url, command, options):
     
     except OSError as e:
         if e.errno and e.errno == errno.ENOENT :
-            logger_url.error('renderer binary could not have been found in your current PATH environment variable, exiting')
-    
+            logger_url.error('%s binary could not have been found in your current PATH environment variable, exiting' % context)
+            return SHELL_EXECUTION_ERROR
+        
     except Exception as err:
         logger_gen.error('Unknown error: %s, exiting' % err)
-        
         return SHELL_EXECUTION_ERROR
 
 def filter_bad_filename_chars(filename):
@@ -315,30 +318,38 @@ def parse_targets(options):
     
     return target_list
 
-def craft_bin_path(options):
-    global PHANTOMJS_BIN, CHROME_BIN, CHROMIUM_BIN, FIREFOX_BIN, XVFB_BIN
+def craft_bin_path(options, context='renderer'):
+    global PHANTOMJS_BIN, CHROME_BIN, CHROMIUM_BIN, FIREFOX_BIN, XVFB_BIN, IMAGEMAGICK_BIN
     
     final_bin = []
     
-    if options.no_xserver:
-        final_bin.append(XVFB_BIN)
+    if context == 'renderer':
+        if options.no_xserver:
+            final_bin.append(XVFB_BIN)
+        
+        if options.renderer_binary != None: 
+            final_bin.append(os.path.join(options.renderer_binary))
+        
+        else:
+            if options.renderer == 'phantomjs':
+                final_bin.append(PHANTOMJS_BIN)
+            
+            elif options.renderer == 'chrome':
+                final_bin.append(CHROME_BIN)
+            
+            elif options.renderer == 'chromium':
+                final_bin.append(CHROMIUM_BIN)
+            
+            elif options.renderer == 'firefox':
+                final_bin.append(FIREFOX_BIN)
     
-    if options.renderer_binary != None: 
-        final_bin.append(os.path.join(options.renderer_binary))
+    elif context == 'imagemagick':
+        if options.imagemagick_binary != None:
+            final_bin.append(os.path.join(options.imagemagick_binary))
+        
+        else:
+            final_bin.append(IMAGEMAGICK_BIN)
     
-    else:
-        if options.renderer == 'phantomjs':
-            final_bin.append(PHANTOMJS_BIN)
-        
-        elif options.renderer == 'chrome':
-            final_bin.append(CHROME_BIN)
-        
-        elif options.renderer == 'chromium':
-            final_bin.append(CHROMIUM_BIN)
-        
-        elif options.renderer == 'firefox':
-            final_bin.append(FIREFOX_BIN)
-        
     return " ".join(final_bin)
 
 def craft_arg(param):
@@ -347,11 +358,21 @@ def craft_arg(param):
     else:
         return '"%s"' % param
 
+def launch_cmd(logguer, url, cmd_parameters, options, context):
+    """
+        Launch the actual command
+    """
+    cmd = " ".join(cmd_parameters)
+    logguer.debug("Shell command to be executed\n'%s'\n" % cmd)
+    execution_retval = shell_exec(url, cmd, options, context)
+    
+    return execution_retval
+
 def craft_cmd(url_and_options):
     """
         Craft the correct command with url and options
     """
-    global logger_output, WEBSCREENSHOT_JS, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR
+    global logger_output, WEBSCREENSHOT_JS, SHELL_EXECUTION_OK, SHELL_EXECUTION_ERROR, IMAGEMAGICK_BIN
     
     url, options = url_and_options
     
@@ -422,11 +443,21 @@ def craft_cmd(url_and_options):
                             '--window-size=%s' % options.window_size,
                             '%s' % craft_arg(url) ]
                             
-    cmd = " ".join(cmd_parameters)
+    execution_retval = launch_cmd(logger_url, url, cmd_parameters, options, 'renderer')
     
-    logger_url.debug("Shell command to be executed\n'%s'\n" % cmd)
-    
-    execution_retval = shell_exec(url, cmd, options)
+    # ImageMagick URL embedding
+    if options.label and execution_retval == SHELL_EXECUTION_OK:
+        output_filename_label = os.path.join(options.output_directory, ('%s_with_label.%s' % (filter_bad_filename_chars(url), output_format)))
+        cmd_parameters = [ craft_bin_path(options, 'imagemagick'),
+                           craft_arg(output_filename),
+                           '-pointsize 60',
+                           '-gravity Center',
+                           '-background NavajoWhite',
+                           "label:'%s'" % url,
+                           '+swap',
+                           '-append %s' % craft_arg(output_filename_label) ]
+        
+        execution_retval_label = launch_cmd(logger_url, url, cmd_parameters, options, 'imagemagick')
     
     return execution_retval, url
 
