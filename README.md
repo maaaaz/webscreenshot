@@ -29,9 +29,9 @@ Put your targets in a text file and pass it with the `-i` option, or as a positi
 Screenshots will be available, by default, in your current ```./screenshots/``` directory.  
 Accepted input formats are the following:
 ```
-http(s)://domain_or_ip:port(/ressource)
-domain_or_ip:port(/ressource)
-domain_or_ip(/ressource)
+http(s)://domain_or_ip:port(/resource)
+domain_or_ip:port(/resource)
+domain_or_ip(/resource)
 ```
 
 ### Options
@@ -148,7 +148,8 @@ https://duckduckgo.com/robots.txt
 
 Default execution with a list
 -----------------------------
-$ python webscreenshot.py version 2.3
+$ python webscreenshot.py -i list.txt
+webscreenshot.py version 2.3
 
 [+] 4 URLs to be screenshot
 [+] 4 actual URLs screenshot
