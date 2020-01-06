@@ -155,9 +155,10 @@ def shell_exec(url, command, options, context):
     
     timeout = int(options.timeout)
     start = datetime.datetime.now()
+    is_windows = sys.platform == "win32"
     
     try :
-        p = subprocess.Popen(shlex.split(command, posix="win" not in sys.platform), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(command, posix=not is_windows), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # binaries timeout
         while p.poll() is None:
@@ -167,7 +168,7 @@ def shell_exec(url, command, options, context):
                 logger_url.debug("Shell command PID %s reached the timeout, killing it now" % p.pid)
                 logger_url.error("Screenshot somehow failed\n")
                 
-                if sys.platform == 'win32':
+                if is_windows:
                     p.send_signal(signal.SIGTERM)
                 else:
                     p.send_signal(signal.SIGKILL)
