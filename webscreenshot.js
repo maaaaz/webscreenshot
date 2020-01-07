@@ -18,11 +18,11 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-var Page = (function(custom_headers, http_username, http_password, image_width, image_height, crop_height, image_format, image_quality) {
+var Page = (function(custom_headers, http_username, http_password, image_width, image_height, crop_rect, image_format, image_quality) {
 	var opts = {
 		width: image_width || 1200,
 		height: image_height || 800,
-		crop_height: crop_height || false,
+		cropRect: crop_rect || false,
 		format: image_format || 'png',
 		quality: image_quality || 75,
 		ajaxTimeout: 400,
@@ -40,12 +40,12 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 		height: opts.height
 	};
 	
-	if (opts.crop_height) {
+	if (opts.cropRect) {
 		page.clipRect = {
-			top: 0,
-			left: 0,
-			width: opts.width,
-			height: opts.crop_height
+			left: opts.cropRect[0],
+			top: opts.cropRect[1],
+			width: opts.cropRect[2],
+			height: opts.cropRect[3]
 		};
 	}
 	
@@ -133,8 +133,8 @@ function main() {
 	var p_height = new RegExp('height=(.*)');
 	var image_height = '';
 
-	var p_crop_height = new RegExp('crop_height=(.*)');
-	var crop_height = '';
+	var p_crop = new RegExp('crop=(.*)');
+	var crop_rect = '';
 
 	var p_format = new RegExp('format=(.*)');
 	var image_format = '';
@@ -189,9 +189,9 @@ function main() {
 			image_height = p_height.exec(system.args[i])[1];
 		}
 		
-		if (p_crop_height.test(system.args[i]) === true)
+		if (p_crop.test(system.args[i]) === true)
 		{
-			crop_height = p_crop_height.exec(system.args[i])[1];
+			crop_rect = p_crop.exec(system.args[i])[1].split(',');
 		}
 
 		if (p_format.test(system.args[i]) === true)
@@ -212,7 +212,7 @@ function main() {
 		phantom.exit(1);
 	}
 	else {
-		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, crop_height, image_format, image_quality);
+		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, crop_rect, image_format, image_quality);
 		page.render(URL, output_file);
 	}
 }

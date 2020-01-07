@@ -65,7 +65,7 @@ screenshot_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): r
 screenshot_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
 screenshot_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer', action = 'store_true', default = False)
 screenshot_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
-screenshot_grp.add_argument('--crop-height', help = '<HEIGHT> (optional, phantomjs only): height size to crop the screen capture to (default to height of WINDOW_SIZE)', action='store', nargs='?', type=int, default=False, const=True)
+screenshot_grp.add_argument('--crop', help = '<x,y,w,h> (optional, phantomjs only): rectangle to crop the screen capture to (default to WINDOW_SIZE: \'0,0,w,h\'), only numbers, w(idth) and h(eight), eg. "10,20,w,h"', action='store', nargs='?', type=str, default=False, const=True)
 screenshot_grp.add_argument('-f', '--format', help = '<FORMAT> (optional, phantomjs only): specify an output image file format, "pdf", "png", "jpg", "jpeg", "bmp" or "ppm" (default \'png\')', choices = ['pdf', 'png', 'jpg', 'jpeg', 'bmp', 'ppm'], type=str.lower, default = 'png')
 screenshot_grp.add_argument('-q', '--quality', help = '<QUALITY> (optional, phantomjs only): specify the output image quality, an integer between 0 and 100 (default 75)', metavar="[0-100]", choices = range(0,101), type=int, default = 75)
 screenshot_grp.add_argument('-l', '--label', help = '<LABEL> (optional): for each screenshot, create another one displaying inside the target URL (requires imagemagick)', action = 'store_true', default = False)
@@ -412,9 +412,38 @@ def craft_cmd(url_and_options):
         cmd_parameters.append('width=%d' % int(options.window_size.split(',')[0]))
         cmd_parameters.append('height=%d' % int(options.window_size.split(',')[1]))
         
-        if( options.crop_height ):
-            win_height = int(options.window_size.split(',')[1])
-            cmd_parameters.append('crop_height=%d' % (win_height if isinstance(options.crop_height, bool) else int(options.crop_height)))
+        if options.crop:
+            # default values for x, y, w, h
+            def_x = "0"
+            def_y = "0"
+            def_width = options.window_size.split(',')[0]
+            def_height = options.window_size.split(',')[1]
+
+            # assumes no user-specified rectangle (True)
+            crop_rect = [def_x, def_y, def_width, def_height]
+
+            # if there is one then parse it
+            if isinstance(options.crop, str):
+                # remove any char other than 0-9, (,) comma, (w)idth and (h)eight
+                crop = re.sub(r'[^0-9wh,]', '', options.crop)
+
+                # fill-in values for the args
+                crop = crop.replace('w', def_width)
+                crop = crop.replace('h', def_height)
+
+                crop = crop.split(',')
+                if len(crop) < 4:
+                    raise Exception("Please specify a valid crop rectangle.")
+
+                # missing values are replaced by default ones
+                crop_rect[0] = crop[0] or def_x
+                crop_rect[1] = crop[1] or def_y
+                crop_rect[2] = crop[2] or def_width
+                crop_rect[3] = crop[3] or def_height
+
+            cmd_parameters.append('crop=%s' % ",".join(crop_rect))
+            logger_gen.info("Using crop rectangle: '%s'" % str(crop_rect))
+
 
         cmd_parameters.append('format=%s' % options.format)
         cmd_parameters.append('quality=%d' % int(options.quality))
