@@ -36,18 +36,21 @@ domain_or_ip(/resource)
 
 ### Options
 ```
-webscreenshot.py version 2.7
+webscreenshot.py version 2.8
 
 usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
-                        [-w WORKERS] [-v]
+                        [-w WORKERS] [-v] [-p PORT] [-s] [-m]
                         [-r {phantomjs,chrome,chromium,firefox}]
                         [--renderer-binary RENDERER_BINARY] [--no-xserver]
                         [--window-size WINDOW_SIZE]
-                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]] [-l]
-                        [--imagemagick-binary IMAGEMAGICK_BINARY] [-p PORT]
-                        [-s] [-m] [-c COOKIE] [-a HEADER] [-u HTTP_USERNAME]
-                        [-b HTTP_PASSWORD] [-P PROXY] [-A PROXY_AUTH]
-                        [-T PROXY_TYPE] [-t TIMEOUT]
+                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]]
+                        [--ajax-max-timeouts AJAX_MAX_TIMEOUTS] [--crop CROP]
+                        [-l] [--label-size LABEL_SIZE]
+                        [--label-bg-color LABEL_BG_COLOR]
+                        [--imagemagick-binary IMAGEMAGICK_BINARY] [-c COOKIE]
+                        [-a HEADER] [-u HTTP_USERNAME] [-b HTTP_PASSWORD]
+                        [-P PROXY] [-A PROXY_AUTH] [-T PROXY_TYPE]
+                        [-t TIMEOUT]
                         [URL]
 
 optional arguments:
@@ -68,7 +71,14 @@ Main parameters:
                         increase the level { -v INFO, -vv DEBUG } (default
                         verbosity ERROR)
 
-Screenshot parameters:
+Input processing parameters:
+  -p PORT, --port PORT  <PORT> (optional): use the specified port for each
+                        target in the input list. Ex: -p 80
+  -s, --ssl             <SSL> (optional): enforce ssl for every connection
+  -m, --multiprotocol   <MULTIPROTOCOL> (optional): perform screenshots over
+                        HTTP and HTTPS for each target
+
+Screenshot renderer parameters:
   -r {phantomjs,chrome,chromium,firefox}, --renderer {phantomjs,chrome,chromium,firefox}
                         <RENDERER> (optional): renderer to use among
                         'phantomjs' (legacy but best results), 'chrome',
@@ -79,6 +89,8 @@ Screenshot parameters:
                         executable if it cannot be found in $PATH
   --no-xserver          <NO_X_SERVER> (optional): if you are running without
                         an X server, will use xvfb-run to execute the renderer
+
+Screenshot image parameters:
   --window-size WINDOW_SIZE
                         <WINDOW_SIZE> (optional): width and height of the
                         screen capture (default '1200,800')
@@ -90,20 +102,29 @@ Screenshot parameters:
                         <QUALITY> (optional, phantomjs only): specify the
                         output image quality, an integer between 0 and 100
                         (default 75)
+  --ajax-max-timeouts AJAX_MAX_TIMEOUTS
+                        <AJAX_MAX_TIMEOUTS> (optional, phantomjs only): per
+                        AJAX request, and max URL timeout in milliseconds
+                        (default '1400,1800')
+  --crop CROP           <CROP> (optional, phantomjs only): rectangle <t,l,w,h>
+                        to crop the screen capture to (default to WINDOW_SIZE:
+                        '0,0,w,h'), only numbers, w(idth) and h(eight). Ex.
+                        "10,20,w,h"
+
+Screenshot label parameters:
   -l, --label           <LABEL> (optional): for each screenshot, create
                         another one displaying inside the target URL (requires
                         imagemagick)
+  --label-size LABEL_SIZE
+                        <LABEL_SIZE> (optional): font size for the label
+                        (default 60)
+  --label-bg-color LABEL_BG_COLOR
+                        <LABEL_BACKGROUND_COLOR> (optional): label imagemagick
+                        background color (default NavajoWhite)
   --imagemagick-binary IMAGEMAGICK_BINARY
                         <LABEL_BINARY> (optional): path to the imagemagick
                         binary (magick or convert) if it cannot be found in
                         $PATH
-
-Input processing parameters:
-  -p PORT, --port PORT  <PORT> (optional): use the specified port for each
-                        target in the input list. Ex: -p 80
-  -s, --ssl             <SSL> (optional): enforce ssl for every connection
-  -m, --multiprotocol   <MULTIPROTOCOL> (optional): perform screenshots over
-                        HTTP and HTTPS for each target
 
 HTTP parameters:
   -c COOKIE, --cookie COOKIE
@@ -208,8 +229,10 @@ Options not listed here below are supported by every current renderer
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
 |:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
 | **Screenshot parameters**   |                                                                              |                        |                                |                      |
-|                       | format (`-f`)                                                                  | **Yes**                    | No                             | No                   |
-|                       | quality (`-q`)                                                                  | **Yes**                    | No                             | No                   
+|                       | [format](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html) (`-f`)                                                                  | **Yes**                    | No                             | No                   |
+|                       | [quality](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html) (`-q`)                                                                  | **Yes**                    | No                             | No                   
+|                       | ajax-max-timeouts (`--ajax-max-timeouts`)                                         | **Yes**                    | No                             | No                   
+|                       | [crop](https://web.archive.org/web/20200111184050/https://phantomjs.org/api/webpage/property/clip-rect.html) (`--crop`)                                                                  | **Yes**                    | No                             | No                   
 |                       |                                                                              |                        |                                |                      |
 | **HTTP parameters**   |                                                                              |                        |                                |                      |
 |                       | cookie (`-c`)                                                                  | **Yes**                    | No                             | No                   |
@@ -238,6 +261,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.8 - 01/11/2020: Few fixes, ajax timeouts + crop options added, default values for ajaxTimeout and maxTimeout changed 
 * version 2.7 - 01/04/2020: URL embedding in screenshot option added
 * version 2.6 - 12/27/2019: Few fixes
 * version 2.5 - 09/22/2019: Image quality and format options added, PhantomJS useragent updated, modern TLD support

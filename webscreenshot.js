@@ -18,14 +18,15 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-var Page = (function(custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality) {
+var Page = (function(custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality, ajax_timeout, max_timeout, crop_rect) {
 	var opts = {
 		width: image_width || 1200,
 		height: image_height || 800,
 		format: image_format || 'png',
 		quality: image_quality || 75,
-		ajaxTimeout: 400,
-		maxTimeout: 800,
+		cropRect: crop_rect || false,
+		ajaxTimeout: ajax_timeout ||1400,
+		maxTimeout: max_timeout || 1800,
 		httpAuthErrorCode: 2
 	};
 	
@@ -39,6 +40,14 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 		height: opts.height
 	};
 	
+	if (opts.cropRect) {
+		page.clipRect = {
+			top: opts.cropRect[0],
+			left: opts.cropRect[1],
+			width: opts.cropRect[2],
+			height: opts.cropRect[3]
+		};
+	}
 	
 	page.settings.userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36';
 	page.settings.userName = http_username;
@@ -130,6 +139,15 @@ function main() {
 	var p_quality = new RegExp('quality=(.*)');
 	var image_quality = '';
 	
+	var p_ajaxtimeout = new RegExp('ajaxtimeout=(.*)');
+	var ajax_timeout = '';
+
+	var p_maxtimeout = new RegExp('maxtimeout=(.*)');
+	var max_timeout = '';
+	
+	var p_crop = new RegExp('crop=(.*)');
+	var crop_rect = '';
+	
 	var temp_custom_headers = {
 		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
 		'Accept-Encoding': ' '
@@ -181,10 +199,25 @@ function main() {
 		{
 			image_format = p_format.exec(system.args[i])[1];
 		}
-
+		
 		if (p_quality.test(system.args[i]) === true)
 		{
 			image_quality = p_quality.exec(system.args[i])[1];
+		}
+		
+		if (p_ajaxtimeout.test(system.args[i]) === true)
+		{
+			ajax_timeout = p_ajaxtimeout.exec(system.args[i])[1];
+		}
+		
+		if (p_maxtimeout.test(system.args[i]) === true)
+		{
+			max_timeout = p_maxtimeout.exec(system.args[i])[1];
+		}
+		
+		if (p_crop.test(system.args[i]) === true)
+		{
+			crop_rect = p_crop.exec(system.args[i])[1].split(',');
 		}
 	}
 	
@@ -195,7 +228,7 @@ function main() {
 		phantom.exit(1);
 	}
 	else {
-		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality);
+		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality, ajax_timeout, max_timeout, crop_rect);
 		page.render(URL, output_file);
 	}
 }

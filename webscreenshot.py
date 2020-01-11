@@ -48,7 +48,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.7'
+VERSION = '2.8'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -60,20 +60,28 @@ main_grp.add_argument('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (op
 main_grp.add_argument('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 4)', default = 4)
 main_grp.add_argument('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
 
-screenshot_grp = parser.add_argument_group('Screenshot parameters')
-screenshot_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'firefox'], type=str.lower, default = 'phantomjs')
-screenshot_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
-screenshot_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer', action = 'store_true', default = False)
-screenshot_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
-screenshot_grp.add_argument('-f', '--format', help = '<FORMAT> (optional, phantomjs only): specify an output image file format, "pdf", "png", "jpg", "jpeg", "bmp" or "ppm" (default \'png\')', choices = ['pdf', 'png', 'jpg', 'jpeg', 'bmp', 'ppm'], type=str.lower, default = 'png')
-screenshot_grp.add_argument('-q', '--quality', help = '<QUALITY> (optional, phantomjs only): specify the output image quality, an integer between 0 and 100 (default 75)', metavar="[0-100]", choices = range(0,101), type=int, default = 75)
-screenshot_grp.add_argument('-l', '--label', help = '<LABEL> (optional): for each screenshot, create another one displaying inside the target URL (requires imagemagick)', action = 'store_true', default = False)
-screenshot_grp.add_argument('--imagemagick-binary', help = '<LABEL_BINARY> (optional): path to the imagemagick binary (magick or convert) if it cannot be found in $PATH')
-
 proc_grp = parser.add_argument_group('Input processing parameters')
 proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
 proc_grp.add_argument('-s', '--ssl', help = '<SSL> (optional): enforce ssl for every connection', action = 'store_true', default = False)
 proc_grp.add_argument('-m', '--multiprotocol', help = '<MULTIPROTOCOL> (optional): perform screenshots over HTTP and HTTPS for each target', action = 'store_true', default = False) 
+
+renderer_grp = parser.add_argument_group('Screenshot renderer parameters')
+renderer_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'firefox'], type=str.lower, default = 'phantomjs')
+renderer_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
+renderer_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer', action = 'store_true', default = False)
+
+image_grp = parser.add_argument_group('Screenshot image parameters')
+image_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
+image_grp.add_argument('-f', '--format', help = '<FORMAT> (optional, phantomjs only): specify an output image file format, "pdf", "png", "jpg", "jpeg", "bmp" or "ppm" (default \'png\')', choices = ['pdf', 'png', 'jpg', 'jpeg', 'bmp', 'ppm'], type=str.lower, default = 'png')
+image_grp.add_argument('-q', '--quality', help = '<QUALITY> (optional, phantomjs only): specify the output image quality, an integer between 0 and 100 (default 75)', metavar="[0-100]", choices = range(0,101), type = int, default = 75)
+image_grp.add_argument('--ajax-max-timeouts', help = '<AJAX_MAX_TIMEOUTS> (optional, phantomjs only): per AJAX request, and max URL timeout in milliseconds (default \'1400,1800\')', default = '1400,1800')
+image_grp.add_argument('--crop', help = '<CROP> (optional, phantomjs only): rectangle <t,l,w,h> to crop the screen capture to (default to WINDOW_SIZE: \'0,0,w,h\'), only numbers, w(idth) and h(eight). Ex. "10,20,w,h"')
+
+image_grp = parser.add_argument_group('Screenshot label parameters')
+image_grp.add_argument('-l', '--label', help = '<LABEL> (optional): for each screenshot, create another one displaying inside the target URL (requires imagemagick)', action = 'store_true', default = False)
+image_grp.add_argument('--label-size', help = '<LABEL_SIZE> (optional): font size for the label (default 60)', type = int, default = 60)
+image_grp.add_argument('--label-bg-color', help = '<LABEL_BACKGROUND_COLOR> (optional): label imagemagick background color (default NavajoWhite)', default = "NavajoWhite")
+image_grp.add_argument('--imagemagick-binary', help = '<LABEL_BINARY> (optional): path to the imagemagick binary (magick or convert) if it cannot be found in $PATH')
 
 http_grp = parser.add_argument_group('HTTP parameters')
 http_grp.add_argument('-c', '--cookie', help = '<COOKIE_STRING> (optional): cookie string to add. Ex: -c "JSESSIONID=1234; YOLO=SWAG"')
@@ -143,6 +151,12 @@ def kill_em_all(signal, frame):
     logger_gen.info('CTRL-C received, exiting')
     sys.exit(0)
     
+def is_windows():
+    """
+        Are we running on Windows or not ?
+    """
+    return "win32" in sys.platform.lower()
+
 def shell_exec(url, command, options, context):
     """
         Execute a shell command following a timeout
@@ -156,8 +170,12 @@ def shell_exec(url, command, options, context):
     timeout = int(options.timeout)
     start = datetime.datetime.now()
     
+    def group_subprocesses():
+        if options.no_xserver and not(is_windows()):
+            os.setsid()
+    
     try :
-        p = subprocess.Popen(shlex.split(command, posix="win" not in sys.platform), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(shlex.split(command, posix=not(is_windows())), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=group_subprocesses)
         
         # binaries timeout
         while p.poll() is None:
@@ -167,10 +185,14 @@ def shell_exec(url, command, options, context):
                 logger_url.debug("Shell command PID %s reached the timeout, killing it now" % p.pid)
                 logger_url.error("Screenshot somehow failed\n")
                 
-                if sys.platform == 'win32':
+                if is_windows():
                     p.send_signal(signal.SIGTERM)
                 else:
-                    p.send_signal(signal.SIGKILL)
+                    if options.no_xserver:
+                        pgid = os.getpgid(p.pid)
+                        os.killpg(pgid, signal.SIGKILL)
+                    else:
+                        p.send_signal(signal.SIGKILL)
                 
                 return SHELL_EXECUTION_ERROR
         
@@ -353,7 +375,7 @@ def craft_bin_path(options, context='renderer'):
     return " ".join(final_bin)
 
 def craft_arg(param):
-    if "win" in sys.platform.lower():
+    if is_windows():
         return '%s' % param
     else:
         return '"%s"' % param
@@ -408,11 +430,21 @@ def craft_cmd(url_and_options):
             
             cmd_parameters.append('header="Authorization: Basic %s"' % basic_authentication_header)
         
-        cmd_parameters.append('width=%d' % int(options.window_size.split(',')[0]))
-        cmd_parameters.append('height=%d' % int(options.window_size.split(',')[1]))
+        width = options.window_size.split(',')[0]
+        
+        height = options.window_size.split(',')[1]
+        cmd_parameters.append('width=%d' % int(width))
+        cmd_parameters.append('height=%d' % int(height))
         
         cmd_parameters.append('format=%s' % options.format)
         cmd_parameters.append('quality=%d' % int(options.quality))
+        
+        cmd_parameters.append('ajaxtimeout=%d' % int(options.ajax_max_timeouts.split(',')[0]))
+        cmd_parameters.append('maxtimeout=%d' % int(options.ajax_max_timeouts.split(',')[1]))
+        
+        if options.crop != None:
+            crop_rectangle = options.crop.replace('w', width).replace('h', height)
+            cmd_parameters.append('crop="%s"' % crop_rectangle)
         
         if options.header:
             for header in options.header:
@@ -450,9 +482,9 @@ def craft_cmd(url_and_options):
         output_filename_label = os.path.join(options.output_directory, ('%s_with_label.%s' % (filter_bad_filename_chars(url), output_format)))
         cmd_parameters = [ craft_bin_path(options, 'imagemagick'),
                            craft_arg(output_filename),
-                           '-pointsize 60',
+                           '-pointsize %s' % options.label_size,
                            '-gravity Center',
-                           '-background NavajoWhite',
+                           '-background %s' % options.label_bg_color,
                            "label:'%s'" % url,
                            '+swap',
                            '-append %s' % craft_arg(output_filename_label) ]
@@ -521,7 +553,11 @@ def main():
     if not os.path.exists(options.output_directory):
         logger_gen.info("'%s' does not exist, will then be created" % options.output_directory)
         os.makedirs(options.output_directory)
-        
+    
+    if options.crop != None:
+        if len(options.crop.split(',')) != 4:
+            parser.error('Please specify a valid crop rectangle')
+    
     url_list = parse_targets(options)
     
     take_screenshot(url_list, options)
