@@ -516,6 +516,7 @@ def take_screenshot(url_list, options):
     print("[+] %s error(s)" % screenshots_error)
     
     pool.close()
+    pool.join()
 
     if screenshots_error != 0:
         for url in screenshots_error_url:
