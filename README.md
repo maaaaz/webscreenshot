@@ -229,10 +229,10 @@ Options not listed here below are supported by every current renderer
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
 |:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
 | **Screenshot parameters**   |                                                                              |                        |                                |                      |
-|                       | [format](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html) (`-f`)                                                                  | **Yes**                    | No                             | No                   |
-|                       | [quality](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html) (`-q`)                                                                  | **Yes**                    | No                             | No                   
+|                       | format (`-f`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | No                             | No                   |
+|                       | quality (`-q`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | No                             | No                   
 |                       | ajax and request timeouts (`--ajax-max-timeouts`)                                         | **Yes**                    | No                             | No                   
-|                       | [crop](https://web.archive.org/web/20200111184050/https://phantomjs.org/api/webpage/property/clip-rect.html) (`--crop`)                                                                  | **Yes**                    | No                             | No                   
+|                       | crop (`--crop`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184050/https://phantomjs.org/api/webpage/property/clip-rect.html)                    | No                             | No                   
 |                       |                                                                              |                        |                                |                      |
 | **HTTP parameters**   |                                                                              |                        |                                |                      |
 |                       | cookie (`-c`)                                                                  | **Yes**                    | No                             | No                   |
@@ -261,6 +261,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.9 - 01/26/2020: Few fixes
 * version 2.8 - 01/11/2020: Few fixes, ajax timeouts + crop + label size + label font options added, default values for ajaxTimeout and maxTimeout changed 
 * version 2.7 - 01/04/2020: URL embedding in screenshot option added
 * version 2.6 - 12/27/2019: Few fixes

@@ -48,7 +48,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.8'
+VERSION = '2.9'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -138,24 +138,37 @@ ipv4_only = re.compile('^(?P<host>%s)%s$' % (p_ipv4_elementary, p_resource))
 entry_from_csv = re.compile('^(?P<host>%s|%s)\s+(?P<port>\d+)$' % (p_domain, p_ipv4_elementary))
 
 # Handful functions
-def init_worker():
-    """ 
-        Tell the workers to ignore a global SIGINT interruption
-    """
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    
-def kill_em_all(signal, frame):
-    """
-        Terminate all processes while capturing a SIGINT from the user
-    """
-    logger_gen.info('CTRL-C received, exiting')
-    sys.exit(0)
-    
 def is_windows():
     """
         Are we running on Windows or not ?
     """
     return "win32" in sys.platform.lower()
+
+def init_worker():
+    """ 
+        Tell the workers to ignore a global SIGINT interruption
+    """
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+def kill_em_all(sig, frame):
+    """
+        Terminate all processes while capturing a SIGINT from the user
+    """
+    logger_gen.info('CTRL-C received, exiting')
+    if is_windows():
+        multiprocessing.sys.exit(1)
+    
+    else:
+        pid = os.getpid()
+        pgid = os.getpgid(pid)
+        sid = os.getsid(os.getpid())
+        
+        # if launched with --no-xserver
+        if pid == sid:
+            os.killpg(pgid, signal.SIGKILL)
+        else:
+            time.sleep(4)
+            multiprocessing.sys.exit(1)
 
 def shell_exec(url, command, options, context):
     """
@@ -175,7 +188,10 @@ def shell_exec(url, command, options, context):
             os.setsid()
     
     try :
-        p = subprocess.Popen(shlex.split(command, posix=not(is_windows())), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=group_subprocesses)
+        if is_windows():
+            p = subprocess.Popen(shlex.split(command, posix=not(is_windows())), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        else:
+            p = subprocess.Popen(shlex.split(command, posix=not(is_windows())), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=group_subprocesses)
         
         # binaries timeout
         while p.poll() is None:
@@ -507,7 +523,10 @@ def take_screenshot(url_list, options):
     pool = multiprocessing.Pool(processes=int(options.workers), initializer=init_worker)
     
     taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=izip(url_list, itertools.repeat(options)))]
-
+    
+    pool.close()
+    pool.join()
+    
     screenshots_error_url = [url for retval, url in taken_screenshots if retval == SHELL_EXECUTION_ERROR]
     screenshots_error = sum(retval == SHELL_EXECUTION_ERROR for retval, url in taken_screenshots)
     screenshots_ok = int(screenshot_number - screenshots_error)
@@ -520,7 +539,7 @@ def take_screenshot(url_list, options):
             print("    %s" % url)
 
     return None
-    
+
 def main():
     """
         Dat main
