@@ -243,7 +243,7 @@ Options not listed here below are supported by every current renderer
 | **Connection parameters** |                                                                              |                        |                                |                      |
 |                       | proxy (`-P`)                                                                   | **Yes**                    | **Yes**                            | No                   |
 |                       | proxy_auth (`-A`)                                                              | **Yes**                    | No                             | No                   |
-|                       | proxy_type (`-T`)                                                              | **Yes**                    | No                             | No                   |
+|                       | proxy_type (`-T`)                                                              | **Yes**                    | **Yes**                             | No                   |
 |                       |                                                                              |                        |                                |                      |
 |                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | **Yes**                    | No                             | No                   |
   

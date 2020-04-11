@@ -479,9 +479,16 @@ def craft_cmd(url_and_options):
                             '--hide-scrollbars',
                             '--incognito',
                             '-screenshot=%s' % craft_arg(output_filename),
-                            '--window-size=%s' % options.window_size,
-                            '%s' % craft_arg(url) ]
-        cmd_parameters.append('--proxy-server=%s' % options.proxy) if options.proxy != None else None
+                            '--window-size=%s' % options.window_size]
+
+        # Add the proxy server full argument. Ex: --proxy-server="socks5://127.0.0.1:8080"
+        if options.proxy != None:
+            proxyArg = '--proxy-server="'
+            proxyArg += '%s://' % options.proxy_type if options.proxy_type != None else ''
+            proxyArg += '%s"' % options.proxy
+            cmd_parameters.append(proxyArg)
+
+        cmd_parameters.append('%s' % craft_arg(url))
     
     # Firefox renderer
     elif options.renderer == 'firefox': 
