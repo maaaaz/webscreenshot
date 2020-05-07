@@ -330,26 +330,25 @@ def parse_targets(options):
             
             # No resource URI by default
             if 'res' in matches.keys():
-                res = str(matches['res'])
+                res = "/" + str(matches['res'])
             else:
-                res = None
+                res = ""
             
             # perform screenshots over HTTP and HTTPS for each target
             if options.multiprotocol:
                 final_uri_http_port = int(matches['port']) if 'port' in matches.keys() else 80
-                final_uri_http = '%s://%s:%s' % ('http', host, final_uri_http_port)
+                final_uri_http = '%s://%s:%s%s' % ('http', host, final_uri_http_port, res)
                 target_list.append(final_uri_http)
                 logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri_http))
                 
                 
                 final_uri_https_port = int(matches['port']) if 'port' in matches.keys() else 443
-                final_uri_https = '%s://%s:%s' % ('https', host, final_uri_https_port)
+                final_uri_https = '%s://%s:%s%s' % ('https', host, final_uri_https_port, res)
                 target_list.append(final_uri_https)
                 logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri_https))
             
             else:
-                final_uri = '%s://%s:%s' % (protocol, host, port)
-                final_uri = final_uri + '/%s' % res if res != None else final_uri
+                final_uri = '%s://%s:%s%s' % (protocol, host, port, res)
                 target_list.append(final_uri)
 
                 logger_gen.info("'%s' has been formatted as '%s' with supplied overriding options" % (line, final_uri))
