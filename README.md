@@ -16,7 +16,7 @@ Features
 * Mapping useful options of PhantomJS such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
   * **PhantomJS**, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
-  * **Chrome and Chromium**, which will replace PhantomJS but currently have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot.  
+  * **Chromium, Chrome and Edge Chromium**, which will replace PhantomJS but currently have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot.  
     The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this _rather complex_ method requiring some third-party tools.
   * **Firefox** can also be used as a renderer but has some serious limitations (_so don't use it for the moment_):
     * Impossibility to perform multiple screenshots at the time: no multi-instance of the firefox process
@@ -226,7 +226,7 @@ total 187
 ### Supported options by renderers
 Options not listed here below are supported by every current renderer  
 
-| **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chrome / Chromium renderer** | **Firefox renderer** |
+| **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chromium / Chrome / Edge Chromium renderer** | **Firefox renderer** |
 |:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
 | **Screenshot parameters**   |                                                                              |                        |                                |                      |
 |                       | format (`-f`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | No                             | No                   |
@@ -243,7 +243,7 @@ Options not listed here below are supported by every current renderer
 | **Connection parameters** |                                                                              |                        |                                |                      |
 |                       | proxy (`-P`)                                                                   | **Yes**                    | **Yes**                            | No                   |
 |                       | proxy_auth (`-A`)                                                              | **Yes**                    | No                             | No                   |
-|                       | proxy_type (`-T`)                                                              | **Yes**                    | No                             | No                   |
+|                       | proxy_type (`-T`)                                                              | **Yes**                    | [**Yes**](https://github.com/maaaaz/webscreenshot/pull/51)                             | No                   |
 |                       |                                                                              |                        |                                |                      |
 |                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | **Yes**                    | No                             | No                   |
   
@@ -261,6 +261,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.91 - 05/08/2020: Multiprotocol mode fix
 * version 2.9 - 01/26/2020: Few fixes
 * version 2.8 - 01/11/2020: Few fixes, ajax timeouts + crop + label size + label font options added, default values for ajaxTimeout and maxTimeout changed 
 * version 2.7 - 01/04/2020: URL embedding in screenshot option added
