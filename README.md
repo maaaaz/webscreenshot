@@ -16,8 +16,7 @@ Features
 * Mapping useful options of PhantomJS such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
   * **PhantomJS**, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
-  * **Chromium, Chrome and Edge Chromium**, which will replace PhantomJS but currently have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot.  
-    The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this _rather complex_ method requiring some third-party tools.
+  * **Chromium, Chrome and Edge Chromium**, which will replace PhantomJS
   * **Firefox** can also be used as a renderer but has some serious limitations (_so don't use it for the moment_):
     * Impossibility to perform multiple screenshots at the time: no multi-instance of the firefox process
     * No incognito mode, using webscreenshot will pollute your browsing history
@@ -36,7 +35,7 @@ domain_or_ip(/resource)
 
 ### Options
 ```
-webscreenshot.py version 2.8
+webscreenshot.py version 2.91
 
 usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
                         [-w WORKERS] [-v] [-p PORT] [-s] [-m]
@@ -44,6 +43,7 @@ usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
                         [--renderer-binary RENDERER_BINARY] [--no-xserver]
                         [--window-size WINDOW_SIZE]
                         [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]]
+                        [-d DELAY_SECONDS]
                         [--ajax-max-timeouts AJAX_MAX_TIMEOUTS] [--crop CROP]
                         [-l] [--label-size LABEL_SIZE]
                         [--label-bg-color LABEL_BG_COLOR]
@@ -95,21 +95,25 @@ Screenshot image parameters:
                         <WINDOW_SIZE> (optional): width and height of the
                         screen capture (default '1200,800')
   -f {pdf,png,jpg,jpeg,bmp,ppm}, --format {pdf,png,jpg,jpeg,bmp,ppm}
-                        <FORMAT> (optional, phantomjs only): specify an output
-                        image file format, "pdf", "png", "jpg", "jpeg", "bmp"
-                        or "ppm" (default 'png')
+                        <FORMAT> (optional): specify an output image file
+                        format, Supported formats: PhantomJS -> "pdf", "png",
+                        "jpg", "jpeg", "bmp" or "ppm". ChromX -> "pdf", "jpg",
+                        "jpeg", or "png". (default 'png')
   -q [0-100], --quality [0-100]
-                        <QUALITY> (optional, phantomjs only): specify the
-                        output image quality, an integer between 0 and 100
-                        (default 75)
+                        <QUALITY> (optional, Phantomjs and ChromX[only JPEG
+                        format]): specify the output image quality, an integer
+                        between 0 and 100 (default 75)
+  -d DELAY_SECONDS, --delay DELAY_SECONDS
+                        <DELAY> (optional, ChromX only): specify a screen
+                        capture delay in seconds (default 0)
   --ajax-max-timeouts AJAX_MAX_TIMEOUTS
                         <AJAX_MAX_TIMEOUTS> (optional, phantomjs only): per
                         AJAX request, and max URL timeout in milliseconds
                         (default '1400,1800')
-  --crop CROP           <CROP> (optional, phantomjs only): rectangle <t,l,w,h>
-                        to crop the screen capture to (default to WINDOW_SIZE:
-                        '0,0,w,h'), only numbers, w(idth) and h(eight). Ex.
-                        "10,20,w,h"
+  --crop CROP           <CROP> (optional, phantomjs and ChromeX): rectangle
+                        <t,l,w,h> to crop the screen capture to (default to
+                        WINDOW_SIZE: '0,0,w,h'), only numbers, w(idth) and
+                        h(eight). Ex. "10,20,w,h"
 
 Screenshot label parameters:
   -l, --label           <LABEL> (optional): for each screenshot, create
@@ -229,14 +233,14 @@ Options not listed here below are supported by every current renderer
 | **Option category**   | **Option**                                                                   | **PhantomJS renderer** | **Chromium / Chrome / Edge Chromium renderer** | **Firefox renderer** |
 |:---------------------:|------------------------------------------------------------------------------|:----------------------:|:------------------------------:|:--------------------:|
 | **Screenshot parameters**   |                                                                              |                        |                                |                      |
-|                       | format (`-f`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | No                             | No                   |
-|                       | quality (`-q`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | No                             | No                   
+|                       | format (`-f`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | [**Yes**](https://chromedevtools.github.io/devtools-protocol/1-3/Page/#method-captureScreenshot)                             | No                   |
+|                       | quality (`-q`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | [**Yes**](https://chromedevtools.github.io/devtools-protocol/1-3/Page/#method-captureScreenshot)                             | No                   
 |                       | ajax and request timeouts (`--ajax-max-timeouts`)                                         | **Yes**                    | No                             | No                   
-|                       | crop (`--crop`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184050/https://phantomjs.org/api/webpage/property/clip-rect.html)                    | No                             | No                   
+|                       | crop (`--crop`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184050/https://phantomjs.org/api/webpage/property/clip-rect.html)                    | [**Yes**](https://chromedevtools.github.io/devtools-protocol/1-3/Page/#type-Viewport)                             | No                   
 |                       |                                                                              |                        |                                |                      |
 | **HTTP parameters**   |                                                                              |                        |                                |                      |
-|                       | cookie (`-c`)                                                                  | **Yes**                    | No                             | No                   |
-|                       | header (`-a`)                                                                  | **Yes**                    | No                             | No                   |
+|                       | cookie (`-c`)                                                                  | **Yes**                    | [**Yes**](https://chromedevtools.github.io/devtools-protocol/1-3/Network/#method-setCookies)                             | No                   |
+|                       | header (`-a`)                                                                  | **Yes**                    | [**Yes**](https://chromedevtools.github.io/devtools-protocol/1-3/Network/#method-setExtraHTTPHeaders)                             | No                   |
 |                       | http_username (`-u`)                                                           | **Yes**                    | No                             | No                   |
 |                       | http_password (`-b`)                                                           | **Yes**                    | No                             | No                   |
 |                       |                                                                              |                        |                                |                      |
@@ -245,12 +249,12 @@ Options not listed here below are supported by every current renderer
 |                       | proxy_auth (`-A`)                                                              | **Yes**                    | No                             | No                   |
 |                       | proxy_type (`-T`)                                                              | **Yes**                    | [**Yes**](https://github.com/maaaaz/webscreenshot/pull/51)                             | No                   |
 |                       |                                                                              |                        |                                |                      |
-|                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | **Yes**                    | No                             | No                   |
+|                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | **Yes**                    | Not tested yet                             | No                   |
   
   
 Requirements
 ------------
-* A Python interpreter with version 2.7 or 3.X
+* A Python interpreter with version >= 3.6.1
 * The webscreenshot python script: 
   * The **easiest way** to setup it: `pip install webscreenshot` and then directly use `$ webscreenshot` 
   * Or git clone that repository and `pip install -r requirements.txt` and then `python webscreenshot.py`
