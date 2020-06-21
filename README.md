@@ -36,7 +36,7 @@ domain_or_ip(/resource)
 
 ### Options
 ```
-webscreenshot.py version 2.8
+webscreenshot.py version 2.92
 
 usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY]
                         [-w WORKERS] [-v] [-p PORT] [-s] [-m]
@@ -74,7 +74,7 @@ Main parameters:
 Input processing parameters:
   -p PORT, --port PORT  <PORT> (optional): use the specified port for each
                         target in the input list. Ex: -p 80
-  -s, --ssl             <SSL> (optional): enforce ssl for every connection
+  -s, --ssl             <SSL> (optional): enforce SSL/TLS for every connection
   -m, --multiprotocol   <MULTIPROTOCOL> (optional): perform screenshots over
                         HTTP and HTTPS for each target
 
@@ -89,6 +89,8 @@ Screenshot renderer parameters:
                         executable if it cannot be found in $PATH
   --no-xserver          <NO_X_SERVER> (optional): if you are running without
                         an X server, will use xvfb-run to execute the renderer
+                        (by default, trying to detect if DISPLAY environment
+                        variable exists
 
 Screenshot image parameters:
   --window-size WINDOW_SIZE
@@ -261,6 +263,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.92 - 06/21/2020: no_xserver option autodetection
 * version 2.91 - 05/08/2020: Multiprotocol mode fix
 * version 2.9 - 01/26/2020: Few fixes
 * version 2.8 - 01/11/2020: Few fixes, ajax timeouts + crop + label size + label font options added, default values for ajaxTimeout and maxTimeout changed 

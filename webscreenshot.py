@@ -3,7 +3,7 @@
 
 # This file is part of webscreenshot.
 #
-# Copyright (C) 2019, Thomas Debize <tdebize at mail.com>
+# Copyright (C) 2020, Thomas Debize <tdebize at mail.com>
 # All rights reserved.
 #
 # webscreenshot is free software: you can redistribute it and/or modify
@@ -48,7 +48,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.91'
+VERSION = '2.92'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -62,13 +62,13 @@ main_grp.add_argument('-v', '--verbosity', help = '<VERBOSITY> (optional): verbo
 
 proc_grp = parser.add_argument_group('Input processing parameters')
 proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
-proc_grp.add_argument('-s', '--ssl', help = '<SSL> (optional): enforce ssl for every connection', action = 'store_true', default = False)
+proc_grp.add_argument('-s', '--ssl', help = '<SSL> (optional): enforce SSL/TLS for every connection', action = 'store_true', default = False)
 proc_grp.add_argument('-m', '--multiprotocol', help = '<MULTIPROTOCOL> (optional): perform screenshots over HTTP and HTTPS for each target', action = 'store_true', default = False) 
 
 renderer_grp = parser.add_argument_group('Screenshot renderer parameters')
 renderer_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'firefox'], type=str.lower, default = 'phantomjs')
 renderer_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
-renderer_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer', action = 'store_true', default = False)
+renderer_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer (by default, trying to detect if DISPLAY environment variable exists', action = 'store_true', default = ('DISPLAY' not in os.environ) and ("win32" not in sys.platform.lower()))
 
 image_grp = parser.add_argument_group('Screenshot image parameters')
 image_grp.add_argument('--window-size', help = '<WINDOW_SIZE> (optional): width and height of the screen capture (default \'1200,800\')', default = '1200,800')
@@ -121,21 +121,24 @@ SHELL_EXECUTION_OK = 0
 SHELL_EXECUTION_ERROR = -1
 PHANTOMJS_HTTP_AUTH_ERROR_CODE = 2
 
+CONTEXT_RENDERER = 'renderer'
+CONTEXT_IMAGEMAGICK = 'imagemagick'
+
 # Handful patterns
-p_ipv4_elementary = '(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})'
-p_domain = '[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+'
-p_port = '\d{0,5}'
-p_resource = '(?:/(?P<res>.*))?'
+p_ipv4_elementary = r'(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})\.(?:[\d]{1,3})'
+p_domain = r'[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]+'
+p_port = r'\d{0,5}'
+p_resource = r'(?:/(?P<res>.*))?'
 
-full_uri_domain = re.compile('^(?P<protocol>http(?:|s))://(?P<host>%s|%s)(?::(?P<port>%s))?%s$' % (p_domain, p_ipv4_elementary, p_port, p_resource))
+full_uri_domain = re.compile(r'^(?P<protocol>http(?:|s))://(?P<host>%s|%s)(?::(?P<port>%s))?%s$' % (p_domain, p_ipv4_elementary, p_port, p_resource))
 
-fqdn_and_port = re.compile('^(?P<host>%s):(?P<port>%s)%s$' % (p_domain, p_port, p_resource))
-fqdn_only = re.compile('^(?P<host>%s)%s$' % (p_domain, p_resource))
+fqdn_and_port = re.compile(r'^(?P<host>%s):(?P<port>%s)%s$' % (p_domain, p_port, p_resource))
+fqdn_only = re.compile(r'^(?P<host>%s)%s$' % (p_domain, p_resource))
 
-ipv4_and_port = re.compile('^(?P<host>%s):(?P<port>%s)%s' % (p_ipv4_elementary, p_port, p_resource))
-ipv4_only = re.compile('^(?P<host>%s)%s$' % (p_ipv4_elementary, p_resource))
+ipv4_and_port = re.compile(r'^(?P<host>%s):(?P<port>%s)%s' % (p_ipv4_elementary, p_port, p_resource))
+ipv4_only = re.compile(r'^(?P<host>%s)%s$' % (p_ipv4_elementary, p_resource))
 
-entry_from_csv = re.compile('^(?P<host>%s|%s)\s+(?P<port>\d+)$' % (p_domain, p_ipv4_elementary))
+entry_from_csv = re.compile(r'^(?P<host>%s|%s)\s+(?P<port>\d+)$' % (p_domain, p_ipv4_elementary))
 
 # Handful functions
 def is_windows():
@@ -231,7 +234,17 @@ def shell_exec(url, command, options, context):
     
     except OSError as e:
         if e.errno and e.errno == errno.ENOENT :
-            logger_url.error('%s binary could not have been found in your current PATH environment variable, exiting' % context)
+            default_message = '%s binary could not have been found in your current PATH environment variable, exiting' % context
+            
+            if context == CONTEXT_RENDERER:
+                if options.no_xserver and not is_windows():
+                    logger_url.error('No X server has been found and the xvfb-run binary could not be found, please install xvfb on your system')
+                else:
+                    logger_url.error(default_message)
+            
+            elif context == CONTEXT_IMAGEMAGICK:
+                logger_url.error(default_message)
+            
             return SHELL_EXECUTION_ERROR
         
     except Exception as err:
@@ -245,7 +258,7 @@ def filter_bad_filename_chars(filename):
     # Before, just avoid triple underscore escape for the classic '://' pattern
     filename = filename.replace('://', '_')
     
-    return re.sub('[^\w\-_\. ]', '_', filename)
+    return re.sub(r'[^\w\-_\. ]', '_', filename)
 
 def extract_all_matched_named_groups(regex, match):
     """
@@ -287,7 +300,7 @@ def parse_targets(options):
     
     target_list = []
     
-    if options.input_file != None:    
+    if options.input_file != None:
         with open(options.input_file,'rb') as fd_input:
             try:
                 lines = [l.decode('utf-8').strip() for l in fd_input.readlines()]
@@ -355,12 +368,12 @@ def parse_targets(options):
     
     return target_list
 
-def craft_bin_path(options, context='renderer'):
+def craft_bin_path(options, context=CONTEXT_RENDERER):
     global PHANTOMJS_BIN, CHROME_BIN, CHROMIUM_BIN, FIREFOX_BIN, XVFB_BIN, IMAGEMAGICK_BIN
     
     final_bin = []
     
-    if context == 'renderer':
+    if context == CONTEXT_RENDERER:
         if options.no_xserver:
             final_bin.append(XVFB_BIN)
         
@@ -380,7 +393,7 @@ def craft_bin_path(options, context='renderer'):
             elif options.renderer == 'firefox':
                 final_bin.append(FIREFOX_BIN)
     
-    elif context == 'imagemagick':
+    elif context == CONTEXT_IMAGEMAGICK:
         if options.imagemagick_binary != None:
             final_bin.append(os.path.join(options.imagemagick_binary))
         
@@ -395,12 +408,12 @@ def craft_arg(param):
     else:
         return '"%s"' % param
 
-def launch_cmd(logguer, url, cmd_parameters, options, context):
+def launch_cmd(logger, url, cmd_parameters, options, context):
     """
         Launch the actual command
     """
     cmd = " ".join(cmd_parameters)
-    logguer.debug("Shell command to be executed\n'%s'\n" % cmd)
+    logger.debug("Shell command to be executed\n'%s'\n" % cmd)
     execution_retval = shell_exec(url, cmd, options, context)
     
     return execution_retval
@@ -490,7 +503,7 @@ def craft_cmd(url_and_options):
                             '--window-size=%s' % options.window_size,
                             '%s' % craft_arg(url) ]
                             
-    execution_retval = launch_cmd(logger_url, url, cmd_parameters, options, 'renderer')
+    execution_retval = launch_cmd(logger_url, url, cmd_parameters, options, CONTEXT_RENDERER)
     
     # ImageMagick URL embedding
     if options.label and execution_retval == SHELL_EXECUTION_OK:
@@ -504,7 +517,7 @@ def craft_cmd(url_and_options):
                            '+swap',
                            '-append %s' % craft_arg(output_filename_label) ]
         
-        execution_retval_label = launch_cmd(logger_url, url, cmd_parameters, options, 'imagemagick')
+        execution_retval_label = launch_cmd(logger_url, url, cmd_parameters, options, CONTEXT_IMAGEMAGICK)
     
     return execution_retval, url
 
