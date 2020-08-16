@@ -37,6 +37,7 @@ import logging
 import errno
 import argparse
 import base64
+import io
 
 # Python 2 and 3 compatibility
 if (sys.version_info < (3, 0)):
@@ -48,7 +49,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.92'
+VERSION = '2.93'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -59,6 +60,7 @@ main_grp.add_argument('-i', '--input-file', help = '<INPUT_FILE> text file conta
 main_grp.add_argument('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (optional): screenshots output directory (default \'./screenshots/\')')
 main_grp.add_argument('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 4)', default = 4)
 main_grp.add_argument('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
+main_grp.add_argument('--no-error-file', help = '<NO_ERROR_FILE> (optional): do not write a file with the list of URL of failed screenshots (default false)', action = 'store_true', default = False)
 
 proc_grp = parser.add_argument_group('Input processing parameters')
 proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
@@ -66,7 +68,7 @@ proc_grp.add_argument('-s', '--ssl', help = '<SSL> (optional): enforce SSL/TLS f
 proc_grp.add_argument('-m', '--multiprotocol', help = '<MULTIPROTOCOL> (optional): perform screenshots over HTTP and HTTPS for each target', action = 'store_true', default = False) 
 
 renderer_grp = parser.add_argument_group('Screenshot renderer parameters')
-renderer_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'firefox'], type=str.lower, default = 'phantomjs')
+renderer_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'edgechromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'edgechromium', 'firefox'], type=str.lower, default = 'phantomjs')
 renderer_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
 renderer_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer (by default, trying to detect if DISPLAY environment variable exists', action = 'store_true', default = ('DISPLAY' not in os.environ) and ("win32" not in sys.platform.lower()))
 
@@ -105,8 +107,9 @@ FIREFOX_BIN = 'firefox'
 XVFB_BIN = "xvfb-run -a"
 IMAGEMAGICK_BIN = "convert"
 
-WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), './webscreenshot.js'))
+WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), './webscreenshot.js'))
 SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os_getcwd(), './screenshots/'))
+FAILED_SCREENSHOTS_FILE = os.path.abspath(os.path.join(os_getcwd(), './webscreenshots_failed.txt'))
 
 # Logger definition
 LOGLEVELS = {0 : 'ERROR', 1 : 'INFO', 2 : 'DEBUG'}
@@ -190,6 +193,10 @@ def shell_exec(url, command, options, context):
         if options.no_xserver and not(is_windows()):
             os.setsid()
     
+    def close_subfds(s):
+        s.stdout.close()
+        s.stderr.close()
+    
     try :
         if is_windows():
             p = subprocess.Popen(shlex.split(command, posix=not(is_windows())), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -204,6 +211,8 @@ def shell_exec(url, command, options, context):
                 logger_url.debug("Shell command PID %s reached the timeout, killing it now" % p.pid)
                 logger_url.error("Screenshot somehow failed\n")
                 
+                close_subfds(p)
+                
                 if is_windows():
                     p.send_signal(signal.SIGTERM)
                 else:
@@ -216,6 +225,8 @@ def shell_exec(url, command, options, context):
                 return SHELL_EXECUTION_ERROR
         
         retval = p.poll()
+        close_subfds(p)
+        
         if retval != SHELL_EXECUTION_OK:
             if retval == PHANTOMJS_HTTP_AUTH_ERROR_CODE:
                 # HTTP Authentication request
@@ -251,12 +262,12 @@ def shell_exec(url, command, options, context):
         logger_gen.error('Unknown error: %s, exiting' % err)
         return SHELL_EXECUTION_ERROR
 
-def filter_bad_filename_chars(filename):
+def filter_bad_filename_chars_and_length(filename):
     """
         Filter bad chars for any filename
     """
-    # Before, just avoid triple underscore escape for the classic '://' pattern
-    filename = filename.replace('://', '_')
+    # Before, just avoid triple underscore escape for the classic '://' pattern, and length (max filename length is 255 on common OSes, but some renderer do not support that length while passing arguments for execution)
+    filename = filename.replace('://', '_')[:129]
     
     return re.sub(r'[^\w\-_\. ]', '_', filename)
 
@@ -431,7 +442,7 @@ def craft_cmd(url_and_options):
     logger_url.setLevel(options.log_level)
     
     output_format = options.format if options.renderer == 'phantomjs' else 'png'
-    output_filename = os.path.join(options.output_directory, ('%s.%s' % (filter_bad_filename_chars(url), output_format)))
+    output_filename = os.path.join(options.output_directory, ('%s.%s' % (filter_bad_filename_chars_and_length(url), output_format)))
         
     # PhantomJS renderer
     if options.renderer == 'phantomjs':
@@ -479,7 +490,7 @@ def craft_cmd(url_and_options):
                 cmd_parameters.append('header="%s"' % header.rstrip(';'))
     
     # Chrome and chromium renderers
-    elif (options.renderer == 'chrome') or (options.renderer == 'chromium'): 
+    elif (options.renderer == 'chrome') or (options.renderer == 'chromium') or (options.renderer == 'edgechromium'): 
         cmd_parameters =  [ craft_bin_path(options),
                             '--allow-running-insecure-content',
                             '--ignore-certificate-errors',
@@ -489,7 +500,7 @@ def craft_cmd(url_and_options):
                             '--headless',
                             '--disable-gpu',
                             '--hide-scrollbars',
-                            '--incognito',
+                            '--incognito' if (options.renderer == 'chrome') or (options.renderer == 'chromium') else '-inprivate',
                             '-screenshot=%s' % craft_arg(output_filename),
                             '--window-size=%s' % options.window_size,
                             '%s' % craft_arg(url) ]
@@ -507,7 +518,7 @@ def craft_cmd(url_and_options):
     
     # ImageMagick URL embedding
     if options.label and execution_retval == SHELL_EXECUTION_OK:
-        output_filename_label = os.path.join(options.output_directory, ('%s_with_label.%s' % (filter_bad_filename_chars(url), output_format)))
+        output_filename_label = os.path.join(options.output_directory, ('%s_with_label.%s' % (filter_bad_filename_chars_and_length(url), output_format)))
         cmd_parameters = [ craft_bin_path(options, 'imagemagick'),
                            craft_arg(output_filename),
                            '-pointsize %s' % options.label_size,
@@ -547,8 +558,14 @@ def take_screenshot(url_list, options):
     print("[+] %s error(s)" % screenshots_error)
     
     if screenshots_error != 0:
-        for url in screenshots_error_url:
-            print("    %s" % url)
+        if not(options.no_error_file):
+            with io.open(FAILED_SCREENSHOTS_FILE, 'w', newline='\n') as fd_out:
+                for url in screenshots_error_url:
+                    fd_out.write(url + '\n')
+                    print("    %s" % url)
+        else:
+            for url in screenshots_error_url:
+                print("    %s" % url)
 
     return None
 
