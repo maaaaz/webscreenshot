@@ -36,13 +36,13 @@ domain_or_ip(/resource)
 
 ### Options
 ```
-webscreenshot.py version 2.93
+webscreenshot.py version 2.94
 
-usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY] [-w WORKERS] [-v] [--no-error-file] [-p PORT] [-s] [-m]
+usage: webscreenshot.py [-h] [-i INPUT_FILE] [-o OUTPUT_DIRECTORY] [-w WORKERS] [-v] [--no-error-file] [-z SINGLE_OUTPUT_FILE] [-p PORT] [-s] [-m]
                         [-r {phantomjs,chrome,chromium,edgechromium,firefox}] [--renderer-binary RENDERER_BINARY] [--no-xserver] [--window-size WINDOW_SIZE]
-                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]] [--ajax-max-timeouts AJAX_MAX_TIMEOUTS] [--crop CROP] [-l] [--label-size LABEL_SIZE]
-                        [--label-bg-color LABEL_BG_COLOR] [--imagemagick-binary IMAGEMAGICK_BINARY] [-c COOKIE] [-a HEADER] [-u HTTP_USERNAME]
-                        [-b HTTP_PASSWORD] [-P PROXY] [-A PROXY_AUTH] [-T PROXY_TYPE] [-t TIMEOUT]
+                        [-f {pdf,png,jpg,jpeg,bmp,ppm}] [-q [0-100]] [--ajax-max-timeouts AJAX_MAX_TIMEOUTS] [--crop CROP] [--custom-js CUSTOM_JS] [-l]
+                        [--label-size LABEL_SIZE] [--label-bg-color LABEL_BG_COLOR] [--imagemagick-binary IMAGEMAGICK_BINARY] [-c COOKIE] [-a HEADER]
+                        [-u HTTP_USERNAME] [-b HTTP_PASSWORD] [-P PROXY] [-A PROXY_AUTH] [-T PROXY_TYPE] [-t TIMEOUT]
                         [URL]
 
 optional arguments:
@@ -58,6 +58,8 @@ Main parameters:
                         <WORKERS> (optional): number of parallel execution workers (default 4)
   -v, --verbosity       <VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)
   --no-error-file       <NO_ERROR_FILE> (optional): do not write a file with the list of URL of failed screenshots (default false)
+  -z SINGLE_OUTPUT_FILE, --single-output-file SINGLE_OUTPUT_FILE
+                        <SINGLE_OUTPUT_FILE> (optional): name of a file which will be the single output of all inputs. Ex. test.png
 
 Input processing parameters:
   -p PORT, --port PORT  <PORT> (optional): use the specified port for each target in the input list. Ex: -p 80
@@ -85,6 +87,9 @@ Screenshot image parameters:
                         <AJAX_MAX_TIMEOUTS> (optional, phantomjs only): per AJAX request, and max URL timeout in milliseconds (default '1400,1800')
   --crop CROP           <CROP> (optional, phantomjs only): rectangle <t,l,w,h> to crop the screen capture to (default to WINDOW_SIZE: '0,0,w,h'), only
                         numbers, w(idth) and h(eight). Ex. "10,20,w,h"
+  --custom-js CUSTOM_JS
+                        <CUSTOM_JS> (optional, phantomjs only): path of a file containing JavaScript code to be executed before taking the screenshot. Ex:
+                        js.txt
 
 Screenshot label parameters:
   -l, --label           <LABEL> (optional): for each screenshot, create another one displaying inside the target URL (requires imagemagick)
@@ -192,6 +197,7 @@ Options not listed here below are supported by every current renderer
 |                       | quality (`-q`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184123/https://phantomjs.org/api/webpage/method/render.html)                    | No                             | No                   
 |                       | ajax and request timeouts (`--ajax-max-timeouts`)                                         | **Yes**                    | No                             | No                   
 |                       | crop (`--crop`)                                                                  | [**Yes**](https://web.archive.org/web/20200111184050/https://phantomjs.org/api/webpage/property/clip-rect.html)                    | No                             | No                   
+|                       | custom JavaScript (`--custom-js`)                                                                  | [**Yes**](https://web.archive.org/web/20200823123026/https://phantomjs.org/api/webpage/method/evaluate-java-script.html)                    | No                             | No                   
 |                       |                                                                              |                        |                                |                      |
 | **HTTP parameters**   |                                                                              |                        |                                |                      |
 |                       | cookie (`-c`)                                                                  | **Yes**                    | No                             | No                   |
@@ -222,6 +228,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.94 - 08/23/2020: Added custom-js and single output file options
 * version 2.93 - 08/16/2020: Added support of Python 3.8 and Microsoft Edge Chromium ; file output for failed webscreenshots ; filename length limitation for long URL 
 * version 2.92 - 06/21/2020: no_xserver option autodetection
 * version 2.91 - 05/08/2020: Multiprotocol mode fix

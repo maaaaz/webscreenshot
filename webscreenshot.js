@@ -18,7 +18,7 @@
 # along with webscreenshot.	 If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-var Page = (function(custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality, ajax_timeout, max_timeout, crop_rect) {
+var Page = (function(custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality, ajax_timeout, max_timeout, crop_rect, custjs) {
 	var opts = {
 		width: image_width || 1200,
 		height: image_height || 800,
@@ -104,7 +104,12 @@ var Page = (function(custom_headers, http_username, http_password, image_width, 
 		page.evaluate(function() {
 			document.body.bgColor = 'white';
 		});
-
+		if (custjs)
+		{
+			var fs = require('fs');
+			var content = fs.read(custjs);
+			page.evaluateJavaScript(content);
+		}
 		page.render(opts.file, {format: opts.format, quality: opts.quality});
 		phantom.exit(0);
 	}
@@ -147,6 +152,9 @@ function main() {
 	
 	var p_crop = new RegExp('crop=(.*)');
 	var crop_rect = '';
+
+	var p_custjs = new RegExp('customjs=(.*)');
+	var custjs = '';
 	
 	var temp_custom_headers = {
 		// Nullify Accept-Encoding header to disable compression (https://github.com/ariya/phantomjs/issues/10930)
@@ -219,6 +227,11 @@ function main() {
 		{
 			crop_rect = p_crop.exec(system.args[i])[1].split(',');
 		}
+		
+		if (p_custjs.test(system.args[i]) === true)
+		{
+			custjs = p_custjs.exec(system.args[i])[1].split(',');
+		}
 	}
 	
 	if (typeof(URL) === 'undefined' || URL.length == 0 || typeof(output_file) === 'undefined' || output_file.length == 0) {
@@ -228,7 +241,7 @@ function main() {
 		phantom.exit(1);
 	}
 	else {
-		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality, ajax_timeout, max_timeout, crop_rect);
+		var page = Page(temp_custom_headers, http_username, http_password, image_width, image_height, image_format, image_quality, ajax_timeout, max_timeout, crop_rect, custjs);
 		page.render(URL, output_file);
 	}
 }

@@ -49,7 +49,7 @@ else:
     izip = zip
 
 # Script version
-VERSION = '2.93'
+VERSION = '2.94'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -61,6 +61,7 @@ main_grp.add_argument('-o', '--output-directory', help = '<OUTPUT_DIRECTORY> (op
 main_grp.add_argument('-w', '--workers', help = '<WORKERS> (optional): number of parallel execution workers (default 4)', default = 4)
 main_grp.add_argument('-v', '--verbosity', help = '<VERBOSITY> (optional): verbosity level, repeat it to increase the level { -v INFO, -vv DEBUG } (default verbosity ERROR)', action = 'count', default = 0)
 main_grp.add_argument('--no-error-file', help = '<NO_ERROR_FILE> (optional): do not write a file with the list of URL of failed screenshots (default false)', action = 'store_true', default = False)
+main_grp.add_argument('-z', '--single-output-file', help = '<SINGLE_OUTPUT_FILE> (optional): name of a file which will be the single output of all inputs. Ex. test.png')
 
 proc_grp = parser.add_argument_group('Input processing parameters')
 proc_grp.add_argument('-p', '--port', help = '<PORT> (optional): use the specified port for each target in the input list. Ex: -p 80')
@@ -78,6 +79,7 @@ image_grp.add_argument('-f', '--format', help = '<FORMAT> (optional, phantomjs o
 image_grp.add_argument('-q', '--quality', help = '<QUALITY> (optional, phantomjs only): specify the output image quality, an integer between 0 and 100 (default 75)', metavar="[0-100]", choices = range(0,101), type = int, default = 75)
 image_grp.add_argument('--ajax-max-timeouts', help = '<AJAX_MAX_TIMEOUTS> (optional, phantomjs only): per AJAX request, and max URL timeout in milliseconds (default \'1400,1800\')', default = '1400,1800')
 image_grp.add_argument('--crop', help = '<CROP> (optional, phantomjs only): rectangle <t,l,w,h> to crop the screen capture to (default to WINDOW_SIZE: \'0,0,w,h\'), only numbers, w(idth) and h(eight). Ex. "10,20,w,h"')
+image_grp.add_argument('--custom-js', help = '<CUSTOM_JS> (optional, phantomjs only): path of a file containing JavaScript code to be executed before taking the screenshot. Ex: js.txt')
 
 image_grp = parser.add_argument_group('Screenshot label parameters')
 image_grp.add_argument('-l', '--label', help = '<LABEL> (optional): for each screenshot, create another one displaying inside the target URL (requires imagemagick)', action = 'store_true', default = False)
@@ -287,7 +289,7 @@ def extract_all_matched_named_groups(regex, match):
         if matched_value != None: result[name] = matched_value
     
     return result
-    
+
 def entry_format_validator(line):
     """
         Validate the current line against several regexes and return matched parameters (ip, domain, port etc.)
@@ -380,6 +382,9 @@ def parse_targets(options):
     return target_list
 
 def craft_bin_path(options, context=CONTEXT_RENDERER):
+    """
+        Craft the proper binary path for renderer 
+    """
     global PHANTOMJS_BIN, CHROME_BIN, CHROMIUM_BIN, FIREFOX_BIN, XVFB_BIN, IMAGEMAGICK_BIN
     
     final_bin = []
@@ -414,6 +419,9 @@ def craft_bin_path(options, context=CONTEXT_RENDERER):
     return " ".join(final_bin)
 
 def craft_arg(param):
+    """
+        Craft arguments with proper quotes
+    """
     if is_windows():
         return '%s' % param
     else:
@@ -429,6 +437,23 @@ def launch_cmd(logger, url, cmd_parameters, options, context):
     
     return execution_retval
 
+def craft_output_filename_and_format(url, options):
+    """
+        Craft the output filename and format
+    """
+    output_format = options.format if options.renderer == 'phantomjs' else 'png'
+    
+    if options.single_output_file:
+        if options.single_output_file.lower().endswith('.%s' % output_format):
+            output_filename = os.path.abspath(filter_bad_filename_chars_and_length(options.single_output_file))
+        else:
+            output_filename = os.path.abspath(filter_bad_filename_chars_and_length('%s.%s' % (options.single_output_file, output_format)))
+        
+    else:
+        output_filename = os.path.join(options.output_directory, ('%s.%s' % (filter_bad_filename_chars_and_length(url), output_format)))
+    
+    return output_format, output_filename
+
 def craft_cmd(url_and_options):
     """
         Craft the correct command with url and options
@@ -441,8 +466,7 @@ def craft_cmd(url_and_options):
     logger_url.addHandler(logger_output)
     logger_url.setLevel(options.log_level)
     
-    output_format = options.format if options.renderer == 'phantomjs' else 'png'
-    output_filename = os.path.join(options.output_directory, ('%s.%s' % (filter_bad_filename_chars_and_length(url), output_format)))
+    output_format, output_filename = craft_output_filename_and_format(url, options)
         
     # PhantomJS renderer
     if options.renderer == 'phantomjs':
@@ -470,8 +494,8 @@ def craft_cmd(url_and_options):
             cmd_parameters.append('header="Authorization: Basic %s"' % basic_authentication_header)
         
         width = options.window_size.split(',')[0]
-        
         height = options.window_size.split(',')[1]
+        
         cmd_parameters.append('width=%d' % int(width))
         cmd_parameters.append('height=%d' % int(height))
         
@@ -488,6 +512,10 @@ def craft_cmd(url_and_options):
         if options.header:
             for header in options.header:
                 cmd_parameters.append('header="%s"' % header.rstrip(';'))
+       
+        if options.custom_js and os.path.exists(options.custom_js):
+            cmd_parameters.append('customjs=%s' % craft_arg(os.path.abspath(options.custom_js)))
+       
     
     # Chrome and chromium renderers
     elif (options.renderer == 'chrome') or (options.renderer == 'chromium') or (options.renderer == 'edgechromium'): 
@@ -532,7 +560,6 @@ def craft_cmd(url_and_options):
     
     return execution_retval, url
 
-    
 def take_screenshot(url_list, options):
     """
         Launch the screenshot workers
@@ -591,6 +618,9 @@ def main():
     
     if (options.input_file != None) and (options.URL != None):
         parser.error('Please specify either an input file or an URL')
+    
+    if options.single_output_file:
+        options.workers = 1
     
     if options.output_directory != None:
         options.output_directory = os.path.join(os_getcwd(), options.output_directory)
