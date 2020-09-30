@@ -1,4 +1,4 @@
-webscreenshot
+WebScreenshot
 =============
 
 Description
