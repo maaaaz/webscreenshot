@@ -1,31 +1,31 @@
-webscreenshot
+web screenshot
 =============
 
 Description
 -----------
-A simple script to screenshot a list of websites, based on the [`url-to-image`](https://github.com/kimmobrunfeldt/url-to-image/) PhantomJS script.
+A simple script to screenshot a list of websites, based on the [`URL-to-image`](https://github.com/kimmobrunfeldt/url-to-image/) PhantomJS script.
 
 Features
 --------
-* Integrating url-to-image *'lazy-rendering'* for AJAX resources
+* Integrating URL-to-image *'lazy-rendering'* for AJAX resources
 * Fully functional on Windows and Linux systems
 * Cookie and custom HTTP header definition support for the PhantomJS renderer
 * Multiprocessing and killing of unresponding processes after a user-definable timeout
-* Accepting several formats as input target
-* Customizing screenshot size (width, height), format and quality
-* Mapping useful options of PhantomJS such as ignoring ssl error, proxy definition and proxy authentication, HTTP Basic Authentication
+* Accepting several formats as the input target
+* Customizing screenshot size (width, height), format, and quality
+* Mapping useful options of PhantomJS such as ignoring SSL error, proxy definition, and proxy authentication, HTTP Basic Authentication
 * Supports multiple renderers: 
   * **PhantomJS**, which is legacy and [abandoned](https://groups.google.com/forum/#!topic/phantomjs/9aI5d-LDuNE) but the one still producing the best results
-  * **Chromium, Chrome and Edge Chromium**, which will replace PhantomJS but currently have some limitations: screenshoting an HTTPS website not having a valid certificate, for instance a self-signed one, will produce an empty screenshot.  
-    The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `webscreenshot` doesn't aim to support this _rather complex_ method requiring some third-party tools.
+  * **Chromium, Chrome, and Edge Chromium**, which will replace PhantomJS but currently have some limitations: screenshotting an HTTPS website not having a valid certificate, for instance, a self-signed one, will produce an empty screenshot.  
+    The reason is that the [`--ignore-certificate-errors`](https://groups.google.com/a/chromium.org/forum/#!topic/headless-dev/eiudRsYdc3A) option doesn't work and will never work anymore: the solution is to use a [proper webdriver](https://bugs.chromium.org/p/chromium/issues/detail?id=697721), but to date `web screenshot` doesn't aim to support this _rather complex_ method requiring some third-party tools.
   * **Firefox** can also be used as a renderer but has some serious limitations (_so don't use it for the moment_):
     * Impossibility to perform multiple screenshots at the time: no multi-instance of the firefox process
-    * No incognito mode, using webscreenshot will pollute your browsing history
-* Embedding screenshot URL in image (requires `ImageMagick`) 
+    * No incognito mode, using web screenshot will pollute your browsing history
+* Embedding screenshot URL in the image (requires `ImageMagick`) 
 
 Usage
 -----
-Put your targets in a text file and pass it with the `-i` option, or as a positional argument if you have just a single URL.  
+Put your targets in a text file and pass it with the `-I` option, or as a positional argument if you have just a single URL.  
 Screenshots will be available, by default, in your current ```./screenshots/``` directory.  
 Accepted input formats are the following:
 ```
@@ -147,7 +147,7 @@ $ python webscreenshot.py -v google.fr
 webscreenshot.py version 2.3
 
 [INFO][General] 'google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
-[+] 1 URLs to be screenshot
+[+] 1 URL to be screenshot
 [INFO][http://google.fr:80] Screenshot OK
 
 [+] 1 actual URLs screenshot
@@ -156,7 +156,7 @@ webscreenshot.py version 2.3
 
 Increasing verbosity level execution
 -----------------------------------
-$ python webscreenshot.py -i list.txt -v
+$ python webscreenshot.py -I list.txt -v
 webscreenshot.py version 2.3
 
 [INFO][General] 'http://google.fr' has been formatted as 'http://google.fr:80' with supplied overriding options
@@ -210,18 +210,18 @@ Options not listed here below are supported by every current renderer
 |                       | proxy_auth (`-A`)                                                              | **Yes**                    | No                             | No                   |
 |                       | proxy_type (`-T`)                                                              | **Yes**                    | [**Yes**](https://github.com/maaaaz/webscreenshot/pull/51)                             | No                   |
 |                       |                                                                              |                        |                                |                      |
-|                       | Ability to screenshot a HTTPS website with a non-publicly-signed certificate | **Yes**                    | No                             | No                   |
+|                       | Ability to screenshot an HTTPS website with a non-publicly-signed certificate | **Yes**                    | No                             | No                   |
   
   
 Requirements
 ------------
 * A Python interpreter with version 2.7 or 3.X
-* The webscreenshot python script: 
-  * The **easiest way** to setup it: `pip install webscreenshot` and then directly use `$ webscreenshot` 
+* The web screenshot python script: 
+  * The **easiest way** to set up it: `pip install web screenshot` and then directly use `$ web screenshot` 
   * Or git clone that repository and `pip install -r requirements.txt` and then `python webscreenshot.py`
 * The PhantomJS tool with at least version 2: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/Phantomjs-installation) and check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) if necessary
 * Chrome, Chromium or Firefox > 57 if you want to use one of these renderers
-* `xvfb` if you want to run `webscreenshot` in an headless OS: use the `--no-xserver` webscreenshot option to ease everything
+* `xvfb` if you want to run `web screenshot` in a headless OS: use the `--no-server` web screenshots option to ease everything
 * `ImageMagick` binary (`magick` or `convert`) if you want to embed URL in screenshots with the `--label` option: follow the [installation guide](https://github.com/maaaaz/webscreenshot/wiki/ImageMagick-installation)
 * Check the [FAQ](https://github.com/maaaaz/webscreenshot/wiki/FAQ) before reporting issues
   
@@ -255,13 +255,13 @@ Changelog
 
 Copyright and license
 ---------------------
-webscreenshot is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+web screenshot is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-webscreenshot is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+web screenshot is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with webscreenshot. 
+You should have received a copy of the GNU General Public License along with web screenshot. 
 If not, see http://www.gnu.org/licenses/.
 
 Contact
