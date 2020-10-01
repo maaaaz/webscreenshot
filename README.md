@@ -25,7 +25,7 @@ Features
 
 Usage
 -----
-Put your targets in a text file and pass it with the `-i` option, or as a positional argument if you have just a single URL.  
+Put your targets in a text file and pass it with the `-i` option, or as a positional argument if you just have a single URL.  
 Screenshots will be available, by default, in your current ```./screenshots/``` directory.  
 Accepted input formats are the following:
 ```
