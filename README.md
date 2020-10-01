@@ -1,4 +1,4 @@
-webscreenshot
+amazing web screenshot
 =============
 
 Description
