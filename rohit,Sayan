@@ -1,0 +1,22 @@
+<html></html>
+  <head>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  </head>
+  <body>
+    <iframe src="https://www.flipkart.com/" frameborder="0" width="100%" height="500"></iframe>
+    <button onclick="takeScreenshot()">Take Screenshot</button>
+    <script>
+      function takeScreenshot() {
+        html2canvas(document.querySelector("iframe")).then(canvas => {
+          const link = document.createElement("a");
+          link.download = "screenshot.png";
+          link.href = canvas.toDataURL();
+          link.click();
+        });
+    
+        
+        
+      }
+    </script>
+  </body>
+</html>
