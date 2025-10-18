@@ -228,6 +228,7 @@ Requirements
 
 Changelog
 ---------
+* version 2.95 - 10/23/2025: Fixing phantomjs bug when not finding OpenSSL configuration
 * version 2.94 - 08/23/2020: Added custom-js and single output file options
 * version 2.93 - 08/16/2020: Added support of Python 3.8 and Microsoft Edge Chromium ; file output for failed webscreenshots ; filename length limitation for long URL 
 * version 2.92 - 06/21/2020: no_xserver option autodetection

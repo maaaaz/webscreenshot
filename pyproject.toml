@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webscreenshot"
+authors = [{ email = "tdebize@mail.com" }]
+description = "A simple script to screenshot a list of websites"
+readme = "README.md"
+requires-python = ">=3"
+keywords = ["webscreenshot", "web", "screenshot", "phantomjs", "chrome", "edge", "chromium", "firefox", "lazy", "rendering", "cli"]
+license = "LGPL-3.0-or-later"
+classifiers = [
+    'Topic :: Security',
+    'Programming Language :: Python :: 3'
+]
+dynamic = ["version", "dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["webscreenshot/requirements.txt"]}
+version = {attr = "webscreenshot.webscreenshot.VERSION"}
+
+[tool.setuptools.package-data]
+webscreenshot = ["webscreenshot.js"]
+
+[project.urls]
+Homepage = "https://github.com/maaaaz/webscreenshot"
+
+[project.scripts]
+webscreenshot = "webscreenshot.webscreenshot:main"
