@@ -475,11 +475,11 @@ def craft_cmd(url_and_options):
         cmd_parameters = []
         if not(is_windows()):
             cmd_parameters.append('OPENSSL_CONF=/etc/ssl')
-        else:
-            cmd_parameters = cmd_parameters + [ craft_bin_path(options),
-                                                '--ignore-ssl-errors=true',
-                                                '--ssl-protocol=any',
-                                                '--ssl-ciphers=ALL' ]
+        
+        cmd_parameters = cmd_parameters + [ craft_bin_path(options),
+                                            '--ignore-ssl-errors=true',
+                                            '--ssl-protocol=any',
+                                            '--ssl-ciphers=ALL' ]
         
         cmd_parameters.append("--proxy %s" % options.proxy) if options.proxy != None else None
         cmd_parameters.append("--proxy-auth %s" % options.proxy_auth) if options.proxy_auth != None else None
