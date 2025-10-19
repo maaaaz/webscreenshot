@@ -19,10 +19,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with webscreenshot.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import re
 import os
 import sys
@@ -39,17 +35,8 @@ import argparse
 import base64
 import io
 
-# Python 2 and 3 compatibility
-if (sys.version_info < (3, 0)):
-    os_getcwd = os.getcwdu
-    izip = itertools.izip
-    
-else:
-    os_getcwd = os.getcwd
-    izip = zip
-
 # Script version
-VERSION = '2.95'
+VERSION = '2.97'
 
 # Options definition
 parser = argparse.ArgumentParser()
@@ -69,7 +56,7 @@ proc_grp.add_argument('-s', '--ssl', help = '<SSL> (optional): enforce SSL/TLS f
 proc_grp.add_argument('-m', '--multiprotocol', help = '<MULTIPROTOCOL> (optional): perform screenshots over HTTP and HTTPS for each target', action = 'store_true', default = False) 
 
 renderer_grp = parser.add_argument_group('Screenshot renderer parameters')
-renderer_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'edgechromium\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'edgechromium', 'firefox'], type=str.lower, default = 'phantomjs')
+renderer_grp.add_argument('-r', '--renderer', help = '<RENDERER> (optional): renderer to use among \'phantomjs\' (legacy but best results), \'chrome\', \'chromium\', \'edge\', \'firefox\' (version > 57) (default \'phantomjs\')', choices = ['phantomjs', 'chrome', 'chromium', 'edge', 'firefox'], type=str.lower, default = 'phantomjs')
 renderer_grp.add_argument('--renderer-binary', help = '<RENDERER_BINARY> (optional): path to the renderer executable if it cannot be found in $PATH')
 renderer_grp.add_argument('--no-xserver', help = '<NO_X_SERVER> (optional): if you are running without an X server, will use xvfb-run to execute the renderer (by default, trying to detect if DISPLAY environment variable exists', action = 'store_true', default = ('DISPLAY' not in os.environ) and ("win32" not in sys.platform.lower()))
 
@@ -106,12 +93,13 @@ PHANTOMJS_BIN = 'phantomjs'
 CHROME_BIN = 'google-chrome'
 CHROMIUM_BIN = 'chromium'
 FIREFOX_BIN = 'firefox'
+EDGE_BIN = 'microsoft-edge'
 XVFB_BIN = "xvfb-run -a"
 IMAGEMAGICK_BIN = "convert"
 
 WEBSCREENSHOT_JS = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), './webscreenshot.js'))
-SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os_getcwd(), './screenshots/'))
-FAILED_SCREENSHOTS_FILE = os.path.abspath(os.path.join(os_getcwd(), './webscreenshots_failed.txt'))
+SCREENSHOTS_DIRECTORY = os.path.abspath(os.path.join(os.getcwd(), './screenshots/'))
+FAILED_SCREENSHOTS_FILE = os.path.abspath(os.path.join(os.getcwd(), './webscreenshots_failed.txt'))
 
 # Logger definition
 LOGLEVELS = {0 : 'ERROR', 1 : 'INFO', 2 : 'DEBUG'}
@@ -314,9 +302,9 @@ def parse_targets(options):
     target_list = []
     
     if options.input_file != None:
-        with open(options.input_file,'rb') as fd_input:
+        with io.open(options.input_file, mode='r', encoding='utf-8') as fd_input:
             try:
-                lines = [l.decode('utf-8').strip() for l in fd_input.readlines()]
+                lines = [l.strip() for l in fd_input.readlines()]
             
             except UnicodeDecodeError as e:
                 logger_gen.error('Your input file is not UTF-8 encoded, please encode it before using this script')
@@ -408,6 +396,9 @@ def craft_bin_path(options, context=CONTEXT_RENDERER):
             
             elif options.renderer == 'firefox':
                 final_bin.append(FIREFOX_BIN)
+                
+            elif options.renderer == 'edge':
+                final_bin.append(EDGE_BIN)
     
     elif context == CONTEXT_IMAGEMAGICK:
         if options.imagemagick_binary != None:
@@ -522,7 +513,7 @@ def craft_cmd(url_and_options):
        
     
     # Chrome and chromium renderers
-    elif (options.renderer == 'chrome') or (options.renderer == 'chromium') or (options.renderer == 'edgechromium'): 
+    elif (options.renderer == 'chrome') or (options.renderer == 'chromium') or (options.renderer == 'edge'): 
         cmd_parameters =  [ craft_bin_path(options),
                             '--allow-running-insecure-content',
                             '--ignore-certificate-errors',
@@ -532,7 +523,7 @@ def craft_cmd(url_and_options):
                             '--headless',
                             '--disable-gpu',
                             '--hide-scrollbars',
-                            '--incognito' if (options.renderer == 'chrome') or (options.renderer == 'chromium') else '-inprivate',
+                            '--incognito' if (options.renderer == 'chrome') or (options.renderer == 'chromium') else '--inprivate',
                             '-screenshot=%s' % craft_arg(output_filename),
                             '--window-size=%s' % options.window_size,
                             '%s' % craft_arg(url) ]
@@ -576,7 +567,7 @@ def take_screenshot(url_list, options):
     
     pool = multiprocessing.Pool(processes=int(options.workers), initializer=init_worker)
     
-    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=izip(url_list, itertools.repeat(options)))]
+    taken_screenshots = [r for r in pool.imap(func=craft_cmd, iterable=zip(url_list, itertools.repeat(options)))]
     
     pool.close()
     pool.join()
@@ -590,7 +581,7 @@ def take_screenshot(url_list, options):
     
     if screenshots_error != 0:
         if not(options.no_error_file):
-            with io.open(FAILED_SCREENSHOTS_FILE, 'w', newline='\n') as fd_out:
+            with io.open(FAILED_SCREENSHOTS_FILE, mode='w', newline='\n') as fd_out:
                 for url in screenshots_error_url:
                     fd_out.write(url + '\n')
                     print("    %s" % url)
@@ -627,7 +618,7 @@ def main():
         options.workers = 1
     
     if options.output_directory != None:
-        options.output_directory = os.path.join(os_getcwd(), options.output_directory)
+        options.output_directory = os.path.join(os.getcwd(), options.output_directory)
     else:
         options.output_directory = SCREENSHOTS_DIRECTORY
     
